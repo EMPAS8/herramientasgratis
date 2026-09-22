@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de Código QR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{
+  --paper:#E9E2D0; --paper-2:#DFD6BE; --canvas:#FBF9F4;
+  --ink:#231F18; --ink-soft:#5B5648; --line:#C9BC9C;
+  --accent:#AE3B2C; --accent-ink:#FBF9F4; --teal:#12545A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1B1912; --paper-2:#242018; --canvas:#2A261D;
+    --ink:#EFE9DA; --ink-soft:#B7AF9B; --line:#43402F;
+    --accent:#E0664F; --accent-ink:#1B1912; --teal:#5FB8BE;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1B1912; --paper-2:#242018; --canvas:#2A261D;
+  --ink:#EFE9DA; --ink-soft:#B7AF9B; --line:#43402F;
+  --accent:#E0664F; --accent-ink:#1B1912; --teal:#5FB8BE;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;flex-direction:column;min-height:100%;
+}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;margin:0;letter-spacing:-0.01em;}
+
+header{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding:14px 20px calc(12px + env(safe-area-inset-top,0px));
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid var(--line);background:var(--paper);
+}
+header h1{font-size:1.25rem;font-weight:600;}
+header .tag{color:var(--ink-soft);font-size:0.82rem;flex:1;}
+header .back{color:var(--ink-soft);text-decoration:none;font-size:0.82rem;}
+header .back:hover{color:var(--accent);}
+header .fb-btn{
+  margin-left:auto;flex-shrink:0;font-family:inherit;font-size:0.82rem;
+  padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+  background:var(--canvas);color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+header .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+main{
+  flex:1;display:flex;flex-wrap:wrap;gap:32px;
+  padding:32px 20px calc(40px + env(safe-area-inset-bottom,0px));
+  max-width:900px;margin:0 auto;width:100%;justify-content:center;align-items:flex-start;
+}
+
+.panel{
+  flex:1 1 360px;max-width:420px;
+  background:var(--canvas);border:1px solid var(--line);border-radius:14px;
+  padding:24px;
+}
+.panel h2{font-size:1.05rem;margin-bottom:4px;}
+.panel .sub{color:var(--ink-soft);font-size:0.82rem;margin-bottom:20px;}
+
+label{display:block;font-size:0.82rem;color:var(--ink-soft);margin:14px 0 6px;}
+label:first-of-type{margin-top:0;}
+textarea, select, input[type="text"]{
+  width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.9rem;
+}
+textarea{min-height:74px;resize:vertical;}
+textarea:focus, select:focus, input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.color-input{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;}
+.color-input input[type="color"]{width:30px;height:30px;border:none;background:none;padding:0;cursor:pointer;}
+.color-input span{font-size:0.8rem;color:var(--ink-soft);}
+
+.preview{
+  flex:1 1 320px;max-width:360px;
+  background:var(--canvas);border:1px solid var(--line);border-radius:14px;
+  padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;
+  position:sticky;top:20px;
+}
+#qrCanvas{
+  width:100%;max-width:260px;aspect-ratio:1/1;background:#fff;border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.dl-row{display:flex;gap:8px;width:100%;}
+button.btn{
+  font-family:inherit;font-size:0.88rem;padding:10px 16px;border-radius:8px;
+  border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;flex:1;
+}
+button.btn:hover{border-color:var(--ink-soft);}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+button.btn.primary:hover{opacity:0.92;}
+.hint{color:var(--ink-soft);font-size:0.76rem;text-align:center;line-height:1.5;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--paper);border-radius:10px;padding:18px;width:min(420px,100%);}
+.modal h3{margin-bottom:10px;font-size:1rem;}
+.modal textarea{margin-bottom:10px;}
+.modal input[type="email"]{width:100%;margin-bottom:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.88rem;}
+.modal .mrow{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+
+footer{margin:0 0 24px;color:var(--ink-soft);font-size:0.78rem;text-align:center;}
+
+@media (max-width:640px){
+  .preview{position:static;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Herramientas Gratis</a>
+  <h1>Generador de Código QR</h1>
+  <span class="tag">gratis, sin cuentas, sin marca de agua</span>
+  <button class="fb-btn" id="fbOpenBtn">💬 Comentarios / errores</button>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>Contenido</h2>
+    <p class="sub">Escribe el link, texto, teléfono o lo que quieras convertir en código QR.</p>
+
+    <label for="qrText">Texto o link</label>
+    <textarea id="qrText" placeholder="https://tunegocio.com">https://tunegocio.com</textarea>
+
+    <label for="ecLevel">Corrección de errores</label>
+    <select id="ecLevel">
+      <option value="L">Baja (más datos, QR más simple)</option>
+      <option value="M" selected>Media (recomendada)</option>
+      <option value="Q">Alta</option>
+      <option value="H">Máxima (mejor si lo vas a imprimir con logo)</option>
+    </select>
+
+    <label>Colores</label>
+    <div class="row2">
+      <div class="color-input">
+        <input type="color" id="fgColor" value="#231F18">
+        <span>Código</span>
+      </div>
+      <div class="color-input">
+        <input type="color" id="bgColor" value="#FFFFFF">
+        <span>Fondo</span>
+      </div>
+    </div>
+
+    <label for="sizePx">Tamaño de descarga</label>
+    <select id="sizePx">
+      <option value="512">512 × 512 px</option>
+      <option value="1024" selected>1024 × 1024 px (recomendado)</option>
+      <option value="2048">2048 × 2048 px (impresión)</option>
+    </select>
+  </div>
+
+  <div class="preview">
+    <canvas id="qrCanvas" width="260" height="260"></canvas>
+    <div class="dl-row">
+      <button class="btn" id="dlSvg">Descargar SVG</button>
+      <button class="btn primary" id="dlPng">Descargar PNG</button>
+    </div>
+    <p class="hint">Se genera en tu navegador — el contenido nunca se envía a ningún servidor.</p>
+  </div>
+</main>
+
+<footer>Hecho para que cualquiera lo use, gratis, siempre.</footer>
+
+<script>
+const qrText = document.getElementById('qrText');
+const ecLevel = document.getElementById('ecLevel');
+const fgColor = document.getElementById('fgColor');
+const bgColor = document.getElementById('bgColor');
+const sizePx = document.getElementById('sizePx');
+const qrCanvas = document.getElementById('qrCanvas');
+
+let currentQr = null;
+
+function buildQr(){
+  const text = qrText.value.trim() || ' ';
+  const level = ecLevel.value;
+  let qr;
+  try{
+    qr = qrcode(0, level);
+    qr.addData(text);
+    qr.make();
+  }catch(e){
+    // texto demasiado largo para el nivel de corrección elegido; probamos con L
+    qr = qrcode(0, 'L');
+    qr.addData(text);
+    qr.make();
+  }
+  currentQr = qr;
+  drawToCanvas(qr, qrCanvas, qrCanvas.width);
+}
+
+function drawToCanvas(qr, canvas, sizeCss){
+  const count = qr.getModuleCount();
+  const margin = 4; // quiet zone en módulos
+  const totalModules = count + margin*2;
+  const dpr = window.devicePixelRatio || 1;
+  const pixelSize = sizeCss * dpr;
+  canvas.width = pixelSize; canvas.height = pixelSize;
+  canvas.style.width = sizeCss+'px'; canvas.style.height = sizeCss+'px';
+  const cell = pixelSize / totalModules;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = bgColor.value;
+  ctx.fillRect(0,0,pixelSize,pixelSize);
+  ctx.fillStyle = fgColor.value;
+  for(let r=0;r<count;r++){
+    for(let c=0;c<count;c++){
+      if(qr.isDark(r,c)){
+        const x = (c+margin)*cell, y=(r+margin)*cell;
+        ctx.fillRect(x, y, Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+}
+
+function renderToOffscreenPng(targetSize){
+  const off = document.createElement('canvas');
+  drawToCanvas(currentQr, off, targetSize);
+  return off.toDataURL('image/png');
+}
+
+function buildSvg(qr){
+  const count = qr.getModuleCount();
+  const margin = 4;
+  const total = count + margin*2;
+  let rects = '';
+  for(let r=0;r<count;r++){
+    for(let c=0;c<count;c++){
+      if(qr.isDark(r,c)){
+        rects += `<rect x="${c+margin}" y="${r+margin}" width="1" height="1"/>`;
+      }
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges">
+<rect width="${total}" height="${total}" fill="${bgColor.value}"/>
+<g fill="${fgColor.value}">${rects}</g>
+</svg>`;
+}
+
+function downloadUrl(url, filename){
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+document.getElementById('dlPng').addEventListener('click', ()=>{
+  if(!currentQr) return;
+  const size = parseInt(sizePx.value, 10);
+  const dataUrl = renderToOffscreenPng(size);
+  downloadUrl(dataUrl, 'codigo-qr.png');
+});
+
+document.getElementById('dlSvg').addEventListener('click', ()=>{
+  if(!currentQr) return;
+  const svg = buildSvg(currentQr);
+  const blob = new Blob([svg], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  downloadUrl(url, 'codigo-qr.svg');
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+});
+
+[qrText, ecLevel, fgColor, bgColor].forEach(el=>{
+  el.addEventListener('input', buildQr);
+});
+
+buildQr();
+
+/* ================= FEEDBACK ================= */
+document.getElementById('fbOpenBtn').addEventListener('click', openFeedbackModal);
+function openFeedbackModal(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal">
+    <h3>💬 ¿Falta algo o algo no sirve?</h3>
+    <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.82rem;line-height:1.5;">Cuéntame qué herramienta te gustaría ver, o repórtame si algo está fallando.</p>
+    <form action="https://formsubmit.co/musica.wasd@gmail.com" method="POST" target="fbFrame_hidden">
+      <input type="hidden" name="_subject" value="QR-Generador Feedback">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="email" name="Tu correo (opcional)" placeholder="Tu correo (opcional, por si quieres respuesta)">
+      <textarea name="Mensaje" placeholder="Escribe tu recomendación o problema aquí..." required></textarea>
+      <div class="mrow">
+        <button type="button" class="btn" id="fbCancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="fbSubmit">Enviar</button>
+      </div>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let iframe = document.getElementById('fbFrame_hidden');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.name='fbFrame_hidden'; iframe.id='fbFrame_hidden'; iframe.style.display='none';
+    document.body.appendChild(iframe);
+  }
+
+  const form = bg.querySelector('form');
+  bg.querySelector('#fbCancel').onclick = ()=> bg.remove();
+  form.addEventListener('submit', ()=>{
+    const btn = bg.querySelector('#fbSubmit');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    setTimeout(()=>{
+      bg.innerHTML = `<div class="modal"><h3>¡Gracias! 🙌</h3>
+        <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.88rem;">Tu comentario fue enviado.</p>
+        <div class="mrow"><button class="btn primary" id="fbClose">Cerrar</button></div></div>`;
+      bg.querySelector('#fbClose').onclick = ()=> bg.remove();
+    }, 900);
+  });
+}
+</script>
+</body>
+</html>
