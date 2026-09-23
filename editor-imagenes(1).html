@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Editor de Imágenes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EAE6DE; --paper-2:#DFDACE;
+  --card:#FBFAF6; --line:#C9C0AC;
+  --ink:#221F1B; --ink-soft:#6B6455;
+  --accent:#5B4B8A; --accent-ink:#FBFAF6;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A1712; --paper-2:#23201A;
+    --card:#26221B; --line:#443E30;
+    --ink:#EFE9DA; --ink-soft:#B0A68F;
+    --accent:#9483D1; --accent-ink:#1A1712;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A1712; --paper-2:#23201A;
+  --card:#26221B; --line:#443E30;
+  --ink:#EFE9DA; --ink-soft:#B0A68F;
+  --accent:#9483D1; --accent-ink:#1A1712;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;min-height:100%;
+}
+h1,h2{font-family:"Source Serif 4",Georgia,serif;margin:0;}
+
+header{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 20px 12px;
+  border-bottom:1px solid var(--line);background:var(--paper);flex-shrink:0;
+}
+header h1{font-size:1.2rem;font-weight:600;}
+header .tag{color:var(--ink-soft);font-size:0.8rem;}
+header .back{color:var(--ink-soft);text-decoration:none;font-size:0.82rem;}
+header .back:hover{color:var(--accent);}
+header .fb-btn{
+  margin-left:auto;flex-shrink:0;font-family:inherit;font-size:0.82rem;
+  padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+header .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.shell{flex:1;display:flex;min-height:0;}
+.formcol{width:min(400px,42vw);min-width:300px;border-right:1px solid var(--line);overflow-y:auto;padding:18px 18px 100px;}
+.previewcol{flex:1;overflow:auto;background:var(--paper-2);display:flex;align-items:center;justify-content:center;padding:24px;position:relative;}
+
+.section{margin-bottom:22px;}
+.section h2{font-size:0.86rem;color:var(--ink-soft);font-weight:600;font-family:inherit;margin-bottom:8px;}
+label{display:block;font-size:0.76rem;color:var(--ink-soft);margin:10px 0 4px;}
+label:first-of-type{margin-top:0;}
+input[type=text],input[type=number],select{
+  width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-family:inherit;font-size:0.86rem;
+}
+input[type=range]{width:100%;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;}
+.check{display:flex;align-items:center;gap:7px;font-size:0.82rem;margin-top:10px;color:var(--ink);}
+.check input{width:auto;}
+
+.dropzone{
+  border:1.5px dashed var(--line);border-radius:10px;padding:40px 16px;
+  text-align:center;color:var(--ink-soft);font-size:0.86rem;cursor:pointer;
+}
+.dropzone:hover{border-color:var(--accent);color:var(--ink);}
+.dropzone strong{color:var(--ink);}
+
+button.btn{
+  font-family:inherit;font-size:0.84rem;padding:9px 14px;border-radius:7px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;width:100%;
+}
+button.btn:hover{border-color:var(--ink-soft);}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+button.btn.primary:hover{opacity:0.92;}
+button.btn.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+button.btn:disabled{opacity:0.45;cursor:not-allowed;}
+.btnrow{display:flex;gap:8px;}
+.btnrow button{flex:1;}
+
+.hint{color:var(--ink-soft);font-size:0.76rem;line-height:1.5;margin-top:8px;}
+.dims{color:var(--ink-soft);font-size:0.78rem;margin-top:4px;}
+
+.checker{
+  background-image:
+    linear-gradient(45deg,#bbb 25%,transparent 25%),
+    linear-gradient(-45deg,#bbb 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#bbb 75%),
+    linear-gradient(-45deg,transparent 75%,#bbb 75%);
+  background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0px;
+  background-color:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.2);
+  display:inline-block;max-width:100%;max-height:100%;
+}
+#workCanvas{display:block;max-width:100%;max-height:70vh;cursor:default;}
+#workCanvas.picking{cursor:crosshair;}
+.empty{color:var(--ink-soft);font-size:0.9rem;text-align:center;}
+
+.bottombar{
+  display:flex;gap:8px;position:fixed;bottom:14px;left:18px;
+  width:min(364px, calc(42vw - 36px));min-width:264px;
+}
+button.download{
+  flex:1;padding:13px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:0.9rem;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+button.download.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:500;}
+button.download:hover{opacity:0.92;}
+button.download:disabled{opacity:0.5;cursor:not-allowed;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;}
+.modal{background:var(--paper);border-radius:10px;padding:18px;width:min(420px,100%);}
+.modal h3{margin-bottom:10px;font-size:1rem;font-family:"Source Serif 4",Georgia,serif;}
+.modal textarea{width:100%;min-height:74px;resize:vertical;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal input[type="email"]{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal .mrow{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+.modal button.btn{width:auto;}
+
+@media (max-width:760px){
+  .shell{flex-direction:column;overflow-y:auto;}
+  .formcol{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:none;}
+  .previewcol{padding:16px;}
+  .bottombar{max-width:calc(100vw - 36px);width:calc(100vw - 36px);left:18px;}
+}
+::-webkit-scrollbar{width:11px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Herramientas Gratis</a>
+  <h1>Editor de Imágenes</h1>
+  <span class="tag">cambiar formato, tamaño y quitar fondo — gratis, sin cuentas</span>
+  <button class="fb-btn" id="fbOpenBtn">💬 Comentarios / errores</button>
+</header>
+
+<div class="shell">
+  <div class="formcol" id="formcol">
+
+    <div class="section" id="uploadSection">
+      <h2>Imagen</h2>
+      <div class="dropzone" id="dropzone"><strong>Haz clic para elegir</strong> o arrastra una imagen aquí<br>(JPG, PNG, WEBP…)</div>
+      <div class="dims" id="dimsInfo"></div>
+    </div>
+
+    <div class="section" id="resizeSection" style="display:none;">
+      <h2>Redimensionar</h2>
+      <div class="row2">
+        <div><label>Ancho (px)</label><input type="number" id="rWidth" min="1"></div>
+        <div><label>Alto (px)</label><input type="number" id="rHeight" min="1"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="lockRatio" checked> Mantener proporción</label>
+      <button class="btn" id="applyResize" style="margin-top:10px;">Aplicar tamaño</button>
+    </div>
+
+    <div class="section" id="bgSection" style="display:none;">
+      <h2>Quitar fondo</h2>
+      <p class="hint">Funciona mejor con fondos de un solo color (blanco, de estudio, etc). Pica el botón y luego toca el color de fondo en la imagen.</p>
+      <button class="btn" id="pickBg">Elegir el color del fondo</button>
+      <label>Tolerancia</label>
+      <input type="range" id="tolerance" min="0" max="120" value="32">
+      <div class="btnrow" style="margin-top:10px;">
+        <button class="btn" id="undoBg">Deshacer</button>
+      </div>
+    </div>
+
+    <div class="section" id="formatSection" style="display:none;">
+      <h2>Formato de salida</h2>
+      <select id="outFormat">
+        <option value="image/png" selected>PNG (con transparencia)</option>
+        <option value="image/jpeg">JPG</option>
+        <option value="image/webp">WEBP</option>
+      </select>
+      <div id="qualityWrap" style="display:none;">
+        <label>Calidad</label>
+        <input type="range" id="quality" min="10" max="100" value="90">
+      </div>
+    </div>
+  </div>
+
+  <div class="previewcol" id="previewcol">
+    <p class="empty">Sube una imagen para empezar</p>
+  </div>
+</div>
+
+<div class="bottombar" id="bottombar" style="display:none;">
+  <button class="download secondary" id="resetBtn">Reiniciar</button>
+  <button class="download" id="downloadBtn">Descargar imagen</button>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none;">
+
+<script>
+const $ = id => document.getElementById(id);
+let workCanvas = null, ctx = null;
+let originalW=0, originalH=0;
+let undoData = null;
+let pickingBg = false;
+
+function setupCanvas(w,h){
+  const wrap = document.createElement('div'); wrap.className='checker';
+  workCanvas = document.createElement('canvas');
+  workCanvas.id='workCanvas'; workCanvas.width=w; workCanvas.height=h;
+  ctx = workCanvas.getContext('2d', {willReadFrequently:true});
+  wrap.appendChild(workCanvas);
+  $('previewcol').innerHTML=''; $('previewcol').appendChild(wrap);
+  workCanvas.addEventListener('click', onCanvasClick);
+}
+
+function loadFile(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const MAXDIM = 3000;
+      if(w>MAXDIM || h>MAXDIM){
+        const r = Math.min(MAXDIM/w, MAXDIM/h);
+        w = Math.round(w*r); h = Math.round(h*r);
+      }
+      originalW=w; originalH=h;
+      setupCanvas(w,h);
+      ctx.drawImage(img,0,0,w,h);
+      $('rWidth').value=w; $('rHeight').value=h;
+      updateDimsInfo();
+      ['resizeSection','bgSection','formatSection','bottombar'].forEach(id=> $(id).style.display='');
+      undoData=null;
+    };
+    img.onerror = ()=>{ alert('No se pudo leer esa imagen. Prueba con otro archivo (JPG, PNG o WEBP).'); };
+    img.src = reader.result;
+  };
+  reader.onerror = ()=>{ alert('No se pudo leer ese archivo.'); };
+  reader.readAsDataURL(file);
+}
+
+function updateDimsInfo(){
+  $('dimsInfo').textContent = workCanvas ? `Actual: ${workCanvas.width} × ${workCanvas.height}px` : '';
+}
+
+$('dropzone').addEventListener('click', ()=> $('fileInput').click());
+$('dropzone').addEventListener('dragover', e=>{e.preventDefault(); $('dropzone').style.borderColor='var(--accent)';});
+$('dropzone').addEventListener('dragleave', ()=> $('dropzone').style.borderColor='var(--line)');
+$('dropzone').addEventListener('drop', e=>{
+  e.preventDefault(); $('dropzone').style.borderColor='var(--line)';
+  const f = Array.from(e.dataTransfer.files).find(f=>f.type.startsWith('image/'));
+  if(f) loadFile(f);
+});
+$('fileInput').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(f) loadFile(f); e.target.value='';
+});
+
+/* ---------- resize ---------- */
+let ratio = 1;
+function recalcRatio(){ if(workCanvas) ratio = workCanvas.width/workCanvas.height; }
+$('rWidth').addEventListener('input', ()=>{
+  if($('lockRatio').checked && workCanvas){
+    recalcRatio();
+    $('rHeight').value = Math.round(parseFloat($('rWidth').value||0)/ratio) || '';
+  }
+});
+$('rHeight').addEventListener('input', ()=>{
+  if($('lockRatio').checked && workCanvas){
+    recalcRatio();
+    $('rWidth').value = Math.round(parseFloat($('rHeight').value||0)*ratio) || '';
+  }
+});
+$('applyResize').addEventListener('click', ()=>{
+  if(!workCanvas) return;
+  const nw = Math.max(1, parseInt($('rWidth').value)||workCanvas.width);
+  const nh = Math.max(1, parseInt($('rHeight').value)||workCanvas.height);
+  const off = document.createElement('canvas'); off.width=nw; off.height=nh;
+  off.getContext('2d').drawImage(workCanvas,0,0,nw,nh);
+  workCanvas.width=nw; workCanvas.height=nh;
+  ctx.drawImage(off,0,0);
+  updateDimsInfo();
+});
+
+/* ---------- background removal (flood fill by color) ---------- */
+$('pickBg').addEventListener('click', ()=>{
+  pickingBg = !pickingBg;
+  workCanvas.classList.toggle('picking', pickingBg);
+  $('pickBg').classList.toggle('active', pickingBg);
+  $('pickBg').textContent = pickingBg ? 'Toca el color de fondo…' : 'Elegir el color del fondo';
+});
+
+function onCanvasClick(e){
+  if(!pickingBg || !workCanvas) return;
+  const rect = workCanvas.getBoundingClientRect();
+  const scaleX = workCanvas.width/rect.width, scaleY = workCanvas.height/rect.height;
+  const x = Math.floor((e.clientX-rect.left)*scaleX);
+  const y = Math.floor((e.clientY-rect.top)*scaleY);
+  floodFillTransparent(x,y, parseInt($('tolerance').value,10));
+  pickingBg=false; workCanvas.classList.remove('picking');
+  $('pickBg').classList.remove('active'); $('pickBg').textContent='Elegir el color del fondo';
+}
+
+function floodFillTransparent(sx, sy, tolerance){
+  const w=workCanvas.width, h=workCanvas.height;
+  const imgData = ctx.getImageData(0,0,w,h);
+  undoData = new Uint8ClampedArray(imgData.data); // snapshot for undo
+  const data = imgData.data;
+  const idx0 = (sy*w+sx)*4;
+  const r0=data[idx0], g0=data[idx0+1], b0=data[idx0+2];
+  const tol2 = tolerance*tolerance;
+  const visited = new Uint8Array(w*h);
+  const stack = [sx,sy];
+  visited[sy*w+sx]=1;
+  while(stack.length){
+    const py = stack.pop(), px = stack.pop();
+    const i = (py*w+px)*4;
+    const dr=data[i]-r0, dg=data[i+1]-g0, db=data[i+2]-b0;
+    if(dr*dr+dg*dg+db*db > tol2) continue;
+    data[i+3]=0;
+    const neighbors=[[px+1,py],[px-1,py],[px,py+1],[px,py-1]];
+    for(const [nx,ny] of neighbors){
+      if(nx>=0&&nx<w&&ny>=0&&ny<h){
+        const ni=ny*w+nx;
+        if(!visited[ni]){ visited[ni]=1; stack.push(nx,ny); }
+      }
+    }
+  }
+  ctx.putImageData(imgData,0,0);
+}
+
+$('undoBg').addEventListener('click', ()=>{
+  if(!undoData || !workCanvas) return;
+  const imgData = new ImageData(new Uint8ClampedArray(undoData), workCanvas.width, workCanvas.height);
+  ctx.putImageData(imgData,0,0);
+  undoData=null;
+});
+
+/* ---------- format ---------- */
+$('outFormat').addEventListener('change', ()=>{
+  $('qualityWrap').style.display = $('outFormat').value==='image/png' ? 'none':'';
+});
+
+/* ---------- reset / download ---------- */
+$('resetBtn').addEventListener('click', ()=>{
+  workCanvas=null; ctx=null; undoData=null;
+  $('previewcol').innerHTML = '<p class="empty">Sube una imagen para empezar</p>';
+  ['resizeSection','bgSection','formatSection','bottombar'].forEach(id=> $(id).style.display='none');
+  $('dimsInfo').textContent='';
+});
+
+let _downloadsNS=null;
+async function getDownloads(){
+  if(_downloadsNS!==null) return _downloadsNS;
+  try{ if(window.claude && window.claude.use) _downloadsNS = await window.claude.use('downloads'); }
+  catch(e){ _downloadsNS=null; }
+  return _downloadsNS;
+}
+async function saveFile(blob, name){
+  const dl = await getDownloads();
+  if(dl){ try{ await dl.save({filename:name, data:blob}); return; }catch(e){} }
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+$('downloadBtn').addEventListener('click', async ()=>{
+  if(!workCanvas) return;
+  const btn = $('downloadBtn'); btn.disabled=true; btn.textContent='Generando…';
+  try{
+    const fmt = $('outFormat').value;
+    const q = parseInt($('quality').value,10)/100;
+    const ext = fmt==='image/png' ? 'png' : (fmt==='image/webp' ? 'webp' : 'jpg');
+    let sourceCanvas = workCanvas;
+    if(fmt==='image/jpeg'){
+      // JPG has no transparency: flatten onto white first
+      const flat = document.createElement('canvas');
+      flat.width=workCanvas.width; flat.height=workCanvas.height;
+      const fctx = flat.getContext('2d');
+      fctx.fillStyle='#fff'; fctx.fillRect(0,0,flat.width,flat.height);
+      fctx.drawImage(workCanvas,0,0);
+      sourceCanvas = flat;
+    }
+    const blob = await new Promise(res=> sourceCanvas.toBlob(res, fmt, fmt==='image/png'?undefined:q));
+    await saveFile(blob, `imagen-editada.${ext}`);
+  } finally {
+    btn.disabled=false; btn.textContent='Descargar imagen';
+  }
+});
+
+/* ================= FEEDBACK ================= */
+document.getElementById('fbOpenBtn').addEventListener('click', openFeedbackModal);
+function openFeedbackModal(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal">
+    <h3>💬 ¿Falta algo o algo no sirve?</h3>
+    <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.82rem;line-height:1.5;">Cuéntame qué herramienta te gustaría ver, o repórtame si algo está fallando.</p>
+    <form action="https://formsubmit.co/musica.wasd@gmail.com" method="POST" target="fbFrame_hidden">
+      <input type="hidden" name="_subject" value="Editor-Imagenes Feedback">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="email" name="Tu correo (opcional)" placeholder="Tu correo (opcional, por si quieres respuesta)">
+      <textarea name="Mensaje" placeholder="Escribe tu recomendación o problema aquí..." required></textarea>
+      <div class="mrow">
+        <button type="button" class="btn" id="fbCancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="fbSubmit">Enviar</button>
+      </div>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let iframe = document.getElementById('fbFrame_hidden');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.name='fbFrame_hidden'; iframe.id='fbFrame_hidden'; iframe.style.display='none';
+    document.body.appendChild(iframe);
+  }
+
+  const form = bg.querySelector('form');
+  bg.querySelector('#fbCancel').onclick = ()=> bg.remove();
+  form.addEventListener('submit', ()=>{
+    const btn = bg.querySelector('#fbSubmit');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    setTimeout(()=>{
+      bg.innerHTML = `<div class="modal"><h3>¡Gracias! 🙌</h3>
+        <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.88rem;">Tu comentario fue enviado.</p>
+        <div class="mrow"><button class="btn primary" id="fbClose">Cerrar</button></div></div>`;
+      bg.querySelector('#fbClose').onclick = ()=> bg.remove();
+    }, 900);
+  });
+}
+</script>
+</body>
+</html>
