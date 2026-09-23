@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creador de CV y Carta de Presentación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+<style>
+  :root{
+    --bg:#EDEAE0;
+    --panel:#FBF9F4;
+    --ink:#231F18;
+    --ink-soft:#5B5648;
+    --line:#C9BC9C;
+    --accent:#2F5D62;
+    --accent-soft:#DCEAE7;
+    --gold:#B98A22;
+    --danger:#A23B33;
+    --radius:10px;
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+  body{-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;font-size:0.92rem;color:var(--ink);}
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;gap:1.25rem;
+    padding:0.75rem 1.25rem;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem;white-space:nowrap;}
+  .tabs{display:flex;gap:0.4rem;flex:1;}
+  .tab{
+    background:transparent;border:1px solid transparent;
+    padding:0.45rem 0.9rem;border-radius:999px;
+    font-size:0.9rem;font-weight:500;color:var(--ink-soft);
+  }
+  .tab.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft);}
+  .topbar-actions{display:flex;gap:0.5rem;}
+  .fb-btn{
+    margin-left:auto;flex-shrink:0;font-family:inherit;font-size:0.82rem;
+    padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+    background:var(--panel);color:var(--ink);cursor:pointer;white-space:nowrap;
+  }
+  .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;grid-template-columns:minmax(320px,420px) 1fr;
+    gap:1.25rem;padding:1.25rem;
+    align-items:start;
+  }
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  /* ---------- Form panel ---------- */
+  .form-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:1.25rem 1.25rem 5.5rem;max-height:calc(100vh - 100px);overflow-y:auto;
+    position:relative;
+  }
+  .field-group{margin-bottom:1.4rem;}
+  .field-group > h3{font-size:0.78rem;letter-spacing:0.02em;color:var(--accent);margin-bottom:0.7rem;font-family:'Inter';font-weight:700;}
+  .field{margin-bottom:0.65rem;}
+  .field label{display:block;font-size:0.78rem;color:var(--ink-soft);margin-bottom:0.25rem;}
+  .field input,.field textarea,.field select{
+    width:100%;padding:0.5rem 0.6rem;border:1px solid var(--line);border-radius:6px;
+    background:var(--panel);
+  }
+  .field textarea{resize:vertical;min-height:4.5rem;}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+
+  .entry-card{
+    border:1px solid var(--line);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;background:#FBFCFB;
+  }
+  .entry-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+  .entry-card-head span{font-size:0.8rem;font-weight:600;color:var(--ink-soft);}
+  .mini-btn{
+    background:transparent;border:none;color:var(--danger);font-size:0.78rem;padding:0.15rem 0.4rem;
+  }
+  .add-btn{
+    width:100%;padding:0.55rem;border:1px dashed var(--accent);border-radius:8px;
+    background:transparent;color:var(--accent);font-size:0.85rem;font-weight:600;
+  }
+  .add-btn:hover{background:var(--accent-soft);}
+
+  .import-group{border:1px solid var(--line);border-radius:8px;padding:0.85rem;background:var(--accent-soft);}
+  .import-group h3{margin-bottom:0.4rem;}
+  .import-hint{font-size:0.78rem;color:var(--ink-soft);margin:0 0 0.7rem;line-height:1.45;}
+  .import-status{font-size:0.78rem;margin:0.5rem 0 0;color:var(--ink-soft);}
+  .import-status.ok{color:var(--accent);font-weight:600;}
+  .import-status.err{color:var(--danger);font-weight:600;}
+
+  .tags{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem;}
+  .tag{
+    background:var(--accent-soft);color:var(--accent);border-radius:999px;
+    padding:0.25rem 0.65rem;font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;
+  }
+  .tag button{background:none;border:none;color:var(--accent);font-size:0.85rem;line-height:1;}
+
+  /* ---------- Preview panel ---------- */
+  .preview-panel{position:sticky;top:80px;}
+  .preview-toolbar{
+    display:flex;gap:0.6rem;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;
+  }
+  .preview-toolbar select{
+    padding:0.45rem 0.6rem;border:1px solid var(--line);border-radius:6px;background:var(--panel);
+  }
+  .primary-btn{
+    background:var(--accent);color:#fff;border:none;border-radius:6px;
+    padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;
+  }
+  .ghost-btn{
+    background:transparent;color:var(--ink-soft);border:1px solid var(--line);border-radius:6px;
+    padding:0.5rem 0.9rem;font-size:0.85rem;
+  }
+  .spacer{flex:1;}
+  .autosave-note{font-size:0.75rem;color:var(--ink-soft);}
+
+  .bottombar{
+    position:fixed;bottom:1rem;left:1.25rem;z-index:15;
+    display:flex;gap:0.5rem;
+    width:min(380px, calc(100vw - 2.5rem));
+  }
+  .printmain-btn{
+    flex:1;padding:0.8rem;border-radius:8px;
+    background:var(--panel);color:var(--ink);font-weight:500;font-size:0.9rem;
+    border:1px solid var(--line);
+  }
+  .printmain-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .downloadmain-btn{
+    flex:1;padding:0.8rem;border-radius:8px;border:none;
+    background:var(--accent);color:#fff;font-weight:600;font-size:0.92rem;
+    box-shadow:0 4px 14px rgba(30,42,40,0.2);
+  }
+  .downloadmain-btn:hover{opacity:0.92;}
+
+  .paper{
+    background:#fff;width:210mm;max-width:100%;min-height:297mm;
+    margin:0 auto;padding:16mm 14mm;
+    box-shadow:0 6px 24px rgba(30,42,40,0.12);
+    color:#1E2A28;
+  }
+  .paper[hidden]{display:none;}
+
+  /* CV template: clásico */
+  .paper.tpl-clasico .cv-name{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:700;}
+  .paper.tpl-clasico .cv-role{font-size:1.05rem;color:var(--ink-soft);margin-top:0.2rem;}
+  .paper.tpl-clasico .cv-contact{font-size:0.82rem;color:var(--ink-soft);margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.6rem;}
+  .paper.tpl-clasico .cv-header{border-bottom:2px solid var(--ink);padding-bottom:0.8rem;margin-bottom:1.1rem;}
+  .paper.tpl-clasico .cv-section{margin-bottom:1.1rem;}
+  .paper.tpl-clasico .cv-section h4{
+    font-family:'Fraunces',serif;font-size:0.95rem;letter-spacing:0.03em;text-transform:uppercase;
+    border-bottom:1px solid var(--line);padding-bottom:0.25rem;margin-bottom:0.55rem;
+  }
+  .paper.tpl-clasico .entry-title{font-weight:600;font-size:0.92rem;}
+  .paper.tpl-clasico .entry-sub{font-size:0.82rem;color:var(--ink-soft);}
+  .paper.tpl-clasico .entry-dates{font-size:0.78rem;color:var(--ink-soft);float:right;}
+  .paper.tpl-clasico .entry-desc{font-size:0.85rem;margin-top:0.25rem;white-space:pre-wrap;}
+  .paper.tpl-clasico .skills-list{display:flex;flex-wrap:wrap;gap:0.4rem;}
+  .paper.tpl-clasico .skills-list span{
+    border:1px solid var(--line);border-radius:4px;padding:0.15rem 0.5rem;font-size:0.78rem;
+  }
+
+  /* CV template: moderno */
+  .paper.tpl-moderno{padding:0;overflow:hidden;}
+  .paper.tpl-moderno .cv-header{
+    background:var(--accent);color:#fff;padding:14mm;
+  }
+  .paper.tpl-moderno .cv-name{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;}
+  .paper.tpl-moderno .cv-role{font-size:1.05rem;opacity:0.9;margin-top:0.2rem;}
+  .paper.tpl-moderno .cv-contact{font-size:0.8rem;opacity:0.85;margin-top:0.6rem;display:flex;flex-wrap:wrap;gap:0.7rem;}
+  .paper.tpl-moderno .cv-body{padding:12mm 14mm;}
+  .paper.tpl-moderno .cv-section{margin-bottom:1.1rem;}
+  .paper.tpl-moderno .cv-section h4{
+    font-size:0.82rem;letter-spacing:0.04em;color:var(--accent);font-weight:700;margin-bottom:0.55rem;
+  }
+  .paper.tpl-moderno .entry-title{font-weight:600;font-size:0.92rem;}
+  .paper.tpl-moderno .entry-sub{font-size:0.82rem;color:var(--ink-soft);}
+  .paper.tpl-moderno .entry-dates{font-size:0.78rem;color:var(--gold);float:right;font-weight:600;}
+  .paper.tpl-moderno .entry-desc{font-size:0.85rem;margin-top:0.25rem;white-space:pre-wrap;}
+  .paper.tpl-moderno .skills-list{display:flex;flex-wrap:wrap;gap:0.4rem;}
+  .paper.tpl-moderno .skills-list span{
+    background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:0.15rem 0.55rem;font-size:0.78rem;
+  }
+
+  .cv-empty-hint{color:var(--ink-soft);font-size:0.85rem;font-style:italic;}
+
+  /* Carta preview — own letterhead style */
+  #carta-preview{font-size:0.92rem;line-height:1.7;}
+  #carta-preview .carta-remitente{
+    border-bottom:2px solid var(--accent);padding-bottom:0.9rem;margin-bottom:1.6rem;
+  }
+  #carta-preview .r-nombre{font-family:'Fraunces',serif;font-weight:700;font-size:1.35rem;color:var(--ink);}
+  #carta-preview .r-contacto{font-size:0.8rem;color:var(--ink-soft);margin-top:0.3rem;display:flex;flex-wrap:wrap;gap:0.6rem;}
+  #carta-preview .carta-fecha{text-align:right;color:var(--ink-soft);font-size:0.85rem;margin-bottom:1.2rem;}
+  #carta-preview .carta-dest{margin-bottom:1.2rem;font-size:0.9rem;}
+  #carta-preview .carta-asunto{font-weight:700;margin-bottom:1.1rem;color:var(--accent);}
+  #carta-preview .carta-cuerpo{white-space:pre-wrap;margin-bottom:1.6rem;text-align:justify;}
+  #carta-preview .carta-firma{font-weight:600;padding-top:0.8rem;border-top:1px solid var(--line);display:inline-block;}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,28,27,0.45);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:1rem;
+  }
+  .modal-overlay[hidden]{display:none;}
+  .modal{
+    background:var(--panel);border-radius:var(--radius);padding:1.5rem;width:100%;max-width:420px;
+  }
+  .modal h3{font-size:1.1rem;margin:0 0 0.3rem;}
+  .modal p{font-size:0.85rem;color:var(--ink-soft);margin:0 0 0.9rem;}
+  .modal textarea{width:100%;min-height:6rem;padding:0.6rem;border:1px solid var(--line);border-radius:6px;margin-bottom:0.7rem;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:0.6rem;margin-top:0.4rem;}
+  .modal form input[type="email"]{
+    width:100%;margin-bottom:0.7rem;padding:0.55rem 0.7rem;border:1px solid var(--line);
+    border-radius:6px;font-size:0.85rem;
+  }
+  .modal button.btn{
+    font-family:inherit;font-size:0.86rem;padding:0.5rem 0.9rem;border-radius:6px;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;
+  }
+  .modal button.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+  .modal button.btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+  @media print{
+    .topbar,.form-panel,.preview-toolbar,.modal-overlay,.bottombar{display:none !important;}
+    html,body{overflow:visible !important;height:auto !important;background:#fff !important;}
+    .layout{display:block !important;background:#fff;margin:0;padding:0;}
+    .preview-panel{position:static !important;top:auto !important;}
+    .paper{box-shadow:none !important;margin:0 !important;width:auto !important;max-width:100% !important;min-height:0 !important;}
+  }
+  @page{ margin:0; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Creador de CV y Carta</div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="cv">CV</button>
+    <button class="tab" data-tab="carta">Carta de presentación</button>
+  </nav>
+  <div class="topbar-actions">
+    <button class="fb-btn" id="feedbackBtn">💬 Comentarios / errores</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ CV FORM ============ -->
+  <section class="form-panel" id="cv-form">
+    <div class="field-group import-group">
+      <h3>Importar CV existente</h3>
+      <p class="import-hint">Sube tu CV en PDF o Word (.docx) y se intentará llenar los campos de abajo. La lectura automática no siempre es perfecta — revisa y corrige lo que haga falta después.</p>
+      <button type="button" class="add-btn" id="importCvBtn">📤 Subir CV (PDF o Word)</button>
+      <input type="file" id="importCvFile" accept=".pdf,.docx" style="display:none;">
+      <p class="import-status" id="importCvStatus"></p>
+    </div>
+    <div class="field-group">
+      <h3>Datos personales</h3>
+      <div class="field"><label>Nombre completo</label><input id="f-nombre" placeholder="Ej. María Torres"></div>
+      <div class="field"><label>Puesto al que aspiras</label><input id="f-puesto" placeholder="Ej. Diseñadora UX"></div>
+      <div class="row-2">
+        <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="tu@correo.com"></div>
+        <div class="field"><label>Teléfono</label><input id="f-telefono" placeholder="+52 55 0000 0000"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Ciudad</label><input id="f-ciudad" placeholder="Guadalajara, MX"></div>
+        <div class="field"><label>LinkedIn / portafolio</label><input id="f-link" placeholder="linkedin.com/in/..."></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <h3>Perfil profesional</h3>
+      <div class="field"><textarea id="f-resumen" placeholder="Breve resumen de 2-3 líneas sobre tu experiencia y fortalezas."></textarea></div>
+    </div>
+
+    <div class="field-group">
+      <h3>Experiencia laboral</h3>
+      <div id="exp-list"></div>
+      <button class="add-btn" id="addExp">+ Agregar experiencia</button>
+    </div>
+
+    <div class="field-group">
+      <h3>Educación</h3>
+      <div id="edu-list"></div>
+      <button class="add-btn" id="addEdu">+ Agregar estudios</button>
+    </div>
+
+    <div class="field-group">
+      <h3>Habilidades</h3>
+      <div class="field"><input id="f-skill-input" placeholder="Escribe una habilidad y presiona Enter"></div>
+      <div class="tags" id="skills-tags"></div>
+    </div>
+
+    <div class="field-group">
+      <h3>Idiomas</h3>
+      <div id="lang-list"></div>
+      <button class="add-btn" id="addLang">+ Agregar idioma</button>
+    </div>
+  </section>
+
+  <!-- ============ CARTA FORM ============ -->
+  <section class="form-panel" id="carta-form" hidden>
+    <div class="field-group">
+      <h3>Destinatario</h3>
+      <div class="field"><label>Empresa</label><input id="c-empresa" placeholder="Ej. Estudio Creativo SA"></div>
+      <div class="field"><label>Nombre del reclutador (opcional)</label><input id="c-reclutador" placeholder="Ej. Lic. Juan Pérez"></div>
+      <div class="field"><label>Puesto al que aplicas</label><input id="c-puesto" placeholder="Ej. Diseñadora UX Senior"></div>
+      <div class="field"><label>Fecha</label><input id="c-fecha" type="date"></div>
+    </div>
+    <div class="field-group">
+      <h3>Cuerpo de la carta</h3>
+      <div class="field">
+        <label>Escribe libremente, o usa esta guía: por qué te interesa el puesto, tu experiencia relevante, y qué puedes aportar.</label>
+        <textarea id="c-cuerpo" style="min-height:14rem" placeholder="Estimado/a...
+
+Escribo para expresar mi interés en la vacante de...
+
+Atentamente,"></textarea>
+      </div>
+    </div>
+    <p class="cv-empty-hint">Tu nombre y datos de contacto del CV se usan automáticamente para la firma.</p>
+  </section>
+
+  <!-- ============ PREVIEW ============ -->
+  <aside class="preview-panel">
+    <div class="preview-toolbar" id="cv-toolbar">
+      <select id="templateSelect">
+        <option value="tpl-clasico">Plantilla clásica</option>
+        <option value="tpl-moderno">Plantilla moderna</option>
+      </select>
+      <div class="spacer"></div>
+      <button class="ghost-btn" id="resetBtn">Borrar todo</button>
+    </div>
+    <div class="preview-toolbar" id="carta-toolbar" hidden>
+      <button class="ghost-btn" id="sampleBtnCarta">Usar ejemplo</button>
+      <div class="spacer"></div>
+      <button class="ghost-btn" id="resetBtnCarta">Borrar todo</button>
+    </div>
+
+    <div class="paper tpl-clasico" id="cv-preview">
+      <div class="cv-header">
+        <div class="cv-name" id="p-nombre">Tu nombre</div>
+        <div class="cv-role" id="p-puesto">Puesto al que aspiras</div>
+        <div class="cv-contact" id="p-contacto"></div>
+      </div>
+      <div class="cv-body" id="cv-body-wrap">
+        <div class="cv-section" id="sec-resumen"></div>
+        <div class="cv-section" id="sec-exp"></div>
+        <div class="cv-section" id="sec-edu"></div>
+        <div class="cv-section" id="sec-skills"></div>
+        <div class="cv-section" id="sec-lang"></div>
+      </div>
+    </div>
+
+    <div class="paper" id="carta-preview" hidden>
+      <p class="cv-empty-hint" id="carta-hint">Tu carta aparecerá aquí a medida que completes el formulario de la izquierda, o presiona "Usar ejemplo" arriba para empezar con un modelo editable.</p>
+      <div id="carta-content">
+        <div class="carta-remitente" id="cp-remitente"></div>
+        <div class="carta-fecha" id="cp-fecha"></div>
+        <div class="carta-dest" id="cp-dest"></div>
+        <div class="carta-asunto" id="cp-asunto"></div>
+        <div class="carta-cuerpo" id="cp-cuerpo"></div>
+        <div class="carta-firma" id="cp-firma"></div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<div class="bottombar">
+  <button class="printmain-btn" id="printBtnMain">Imprimir</button>
+  <button class="downloadmain-btn" id="downloadBtnMain">Descargar PDF</button>
+</div>
+
+<!-- Feedback modal -->
+<div class="modal-overlay" id="feedbackModal" hidden>
+  <div class="modal" id="feedbackModalInner">
+    <h3>💬 ¿Falta algo o algo no sirve?</h3>
+    <p>Cuéntame qué herramienta te gustaría ver, o repórtame si algo está fallando.</p>
+    <form id="feedbackForm" action="https://formsubmit.co/tuemail@ejemplo.com" method="POST" target="fbFrame_hidden">
+      <input type="hidden" name="_subject" value="CV y Carta - Feedback">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="email" name="Tu correo (opcional)" placeholder="Tu correo (opcional, por si quieres respuesta)">
+      <textarea name="Mensaje" placeholder="Escribe tu recomendación o problema aquí..." required></textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="feedbackCancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="feedbackSend">Enviar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ---------- CHANGE THIS to your real address, or set it below in FEEDBACK_EMAIL ----------
+
+const STORAGE_KEY = "cvCartaBuilderData";
+
+const state = {
+  nombre:"", puesto:"", email:"", telefono:"", ciudad:"", link:"",
+  resumen:"",
+  experiencias: [],
+  educacion: [],
+  habilidades: [],
+  idiomas: [],
+  template: "tpl-clasico",
+  carta: { empresa:"", reclutador:"", puesto:"", fecha:"", cuerpo:"" }
+};
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function load(){
+  // Autoguardado desactivado: el formulario siempre empieza vacío.
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+}
+
+function save(){
+  // Autoguardado desactivado: no se escribe nada en el navegador.
+}
+
+// ---------- Field bindings ----------
+const simpleFields = {
+  "f-nombre":"nombre","f-puesto":"puesto","f-email":"email","f-telefono":"telefono",
+  "f-ciudad":"ciudad","f-link":"link","f-resumen":"resumen"
+};
+function bindSimpleFields(){
+  Object.entries(simpleFields).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    el.value = state[key] || "";
+    el.addEventListener("input", ()=>{ state[key]=el.value; renderCV(); save(); });
+  });
+}
+
+const cartaFields = {
+  "c-empresa":"empresa","c-reclutador":"reclutador","c-puesto":"puesto",
+  "c-fecha":"fecha","c-cuerpo":"cuerpo"
+};
+function bindCartaFields(){
+  Object.entries(cartaFields).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    el.value = state.carta[key] || "";
+    el.addEventListener("input", ()=>{ state.carta[key]=el.value; renderCarta(); save(); });
+  });
+}
+
+// ---------- Repeatable: experiencia ----------
+function addExp(data){
+  state.experiencias.push(Object.assign({id:uid(),puesto:"",empresa:"",ciudad:"",inicio:"",fin:"",descripcion:""}, data||{}));
+  renderExpForm(); renderCV(); save();
+}
+function renderExpForm(){
+  const wrap = document.getElementById("exp-list");
+  wrap.innerHTML = "";
+  state.experiencias.forEach((exp,i)=>{
+    const card = document.createElement("div");
+    card.className = "entry-card";
+    card.innerHTML = `
+      <div class="entry-card-head"><span>Experiencia ${i+1}</span><button class="mini-btn" data-remove="${exp.id}">Eliminar</button></div>
+      <div class="field"><label>Puesto</label><input data-k="puesto" value="${escAttr(exp.puesto)}"></div>
+      <div class="field"><label>Empresa</label><input data-k="empresa" value="${escAttr(exp.empresa)}"></div>
+      <div class="row-2">
+        <div class="field"><label>Inicio</label><input data-k="inicio" placeholder="Ene 2022" value="${escAttr(exp.inicio)}"></div>
+        <div class="field"><label>Fin</label><input data-k="fin" placeholder="Actualidad" value="${escAttr(exp.fin)}"></div>
+      </div>
+      <div class="field"><label>Descripción / logros</label><textarea data-k="descripcion">${escHtml(exp.descripcion)}</textarea></div>
+    `;
+    card.querySelectorAll("[data-k]").forEach(inp=>{
+      inp.addEventListener("input", ()=>{ exp[inp.dataset.k]=inp.value; renderCV(); save(); });
+    });
+    card.querySelector("[data-remove]").addEventListener("click", ()=>{
+      state.experiencias = state.experiencias.filter(x=>x.id!==exp.id);
+      renderExpForm(); renderCV(); save();
+    });
+    wrap.appendChild(card);
+  });
+}
+
+// ---------- Repeatable: educación ----------
+function addEdu(data){
+  state.educacion.push(Object.assign({id:uid(),titulo:"",institucion:"",inicio:"",fin:""}, data||{}));
+  renderEduForm(); renderCV(); save();
+}
+function renderEduForm(){
+  const wrap = document.getElementById("edu-list");
+  wrap.innerHTML = "";
+  state.educacion.forEach((edu,i)=>{
+    const card = document.createElement("div");
+    card.className = "entry-card";
+    card.innerHTML = `
+      <div class="entry-card-head"><span>Estudio ${i+1}</span><button class="mini-btn" data-remove="${edu.id}">Eliminar</button></div>
+      <div class="field"><label>Título / carrera</label><input data-k="titulo" value="${escAttr(edu.titulo)}"></div>
+      <div class="field"><label>Institución</label><input data-k="institucion" value="${escAttr(edu.institucion)}"></div>
+      <div class="row-2">
+        <div class="field"><label>Inicio</label><input data-k="inicio" value="${escAttr(edu.inicio)}"></div>
+        <div class="field"><label>Fin</label><input data-k="fin" value="${escAttr(edu.fin)}"></div>
+      </div>
+    `;
+    card.querySelectorAll("[data-k]").forEach(inp=>{
+      inp.addEventListener("input", ()=>{ edu[inp.dataset.k]=inp.value; renderCV(); save(); });
+    });
+    card.querySelector("[data-remove]").addEventListener("click", ()=>{
+      state.educacion = state.educacion.filter(x=>x.id!==edu.id);
+      renderEduForm(); renderCV(); save();
+    });
+    wrap.appendChild(card);
+  });
+}
+
+// ---------- Repeatable: idiomas ----------
+function addLang(data){
+  state.idiomas.push(Object.assign({id:uid(),idioma:"",nivel:""}, data||{}));
+  renderLangForm(); renderCV(); save();
+}
+function renderLangForm(){
+  const wrap = document.getElementById("lang-list");
+  wrap.innerHTML = "";
+  state.idiomas.forEach((lang,i)=>{
+    const card = document.createElement("div");
+    card.className = "entry-card";
+    card.innerHTML = `
+      <div class="entry-card-head"><span>Idioma ${i+1}</span><button class="mini-btn" data-remove="${lang.id}">Eliminar</button></div>
+      <div class="row-2">
+        <div class="field"><label>Idioma</label><input data-k="idioma" value="${escAttr(lang.idioma)}"></div>
+        <div class="field"><label>Nivel</label>
+          <select data-k="nivel">
+            <option value="" ${lang.nivel===""?"selected":""}>Selecciona nivel</option>
+            ${["Básico","Intermedio","Avanzado","Nativo"].map(n=>`<option ${lang.nivel===n?"selected":""}>${n}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+    `;
+    card.querySelectorAll("[data-k]").forEach(inp=>{
+      inp.addEventListener("input", ()=>{ lang[inp.dataset.k]=inp.value; renderCV(); save(); });
+    });
+    card.querySelector("[data-remove]").addEventListener("click", ()=>{
+      state.idiomas = state.idiomas.filter(x=>x.id!==lang.id);
+      renderLangForm(); renderCV(); save();
+    });
+    wrap.appendChild(card);
+  });
+}
+
+// ---------- Habilidades (tags) ----------
+function renderSkillsForm(){
+  const wrap = document.getElementById("skills-tags");
+  wrap.innerHTML = "";
+  state.habilidades.forEach(skill=>{
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.innerHTML = `${escHtml(skill)} <button data-skill="${escAttr(skill)}">×</button>`;
+    tag.querySelector("button").addEventListener("click", ()=>{
+      state.habilidades = state.habilidades.filter(s=>s!==skill);
+      renderSkillsForm(); renderCV(); save();
+    });
+    wrap.appendChild(tag);
+  });
+}
+function initSkillInput(){
+  const input = document.getElementById("f-skill-input");
+  input.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && input.value.trim()){
+      e.preventDefault();
+      state.habilidades.push(input.value.trim());
+      input.value="";
+      renderSkillsForm(); renderCV(); save();
+    }
+  });
+}
+
+// ---------- Rendering CV preview ----------
+function escHtml(s){ return (s||"").replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
+
+function renderCV(){
+  document.getElementById("p-nombre").textContent = state.nombre || "Tu nombre";
+  document.getElementById("p-puesto").textContent = state.puesto || "Puesto al que aspiras";
+
+  const contactBits = [state.email, state.telefono, state.ciudad, state.link].filter(Boolean);
+  document.getElementById("p-contacto").innerHTML = contactBits.map(b=>`<span>${escHtml(b)}</span>`).join("");
+
+  document.getElementById("sec-resumen").innerHTML = state.resumen
+    ? `<h4>Perfil profesional</h4><p class="entry-desc" style="margin:0">${escHtml(state.resumen)}</p>` : "";
+
+  document.getElementById("sec-exp").innerHTML = state.experiencias.length
+    ? `<h4>Experiencia laboral</h4>` + state.experiencias.map(exp=>`
+        <div style="margin-bottom:0.7rem;">
+          <div class="entry-dates">${escHtml(exp.inicio)}${exp.inicio||exp.fin? " – ":""}${escHtml(exp.fin)}</div>
+          <div class="entry-title">${escHtml(exp.puesto)}</div>
+          <div class="entry-sub">${escHtml(exp.empresa)}</div>
+          <div class="entry-desc">${escHtml(exp.descripcion)}</div>
+        </div>`).join("") : "";
+
+  document.getElementById("sec-edu").innerHTML = state.educacion.length
+    ? `<h4>Educación</h4>` + state.educacion.map(edu=>`
+        <div style="margin-bottom:0.6rem;">
+          <div class="entry-dates">${escHtml(edu.inicio)}${edu.inicio||edu.fin? " – ":""}${escHtml(edu.fin)}</div>
+          <div class="entry-title">${escHtml(edu.titulo)}</div>
+          <div class="entry-sub">${escHtml(edu.institucion)}</div>
+        </div>`).join("") : "";
+
+  document.getElementById("sec-skills").innerHTML = state.habilidades.length
+    ? `<h4>Habilidades</h4><div class="skills-list">${state.habilidades.map(s=>`<span>${escHtml(s)}</span>`).join("")}</div>` : "";
+
+  document.getElementById("sec-lang").innerHTML = state.idiomas.length
+    ? `<h4>Idiomas</h4><div class="skills-list">${state.idiomas.filter(l=>l.idioma||l.nivel).map(l=>`<span>${escHtml(l.idioma)}${l.idioma&&l.nivel?" · ":""}${escHtml(l.nivel)}</span>`).join("")}</div>` : "";
+}
+
+// ---------- Rendering Carta preview ----------
+function renderCarta(){
+  const c = state.carta;
+
+  const hasContent = !!(c.empresa || c.reclutador || c.puesto || c.cuerpo || c.fecha);
+  document.getElementById("carta-hint").style.display = hasContent ? "none" : "block";
+  document.getElementById("carta-content").style.display = hasContent ? "block" : "none";
+  if(!hasContent) return;
+
+  const fechaTxt = c.fecha ? new Date(c.fecha+"T00:00:00").toLocaleDateString("es-MX",{year:"numeric",month:"long",day:"numeric"}) : "";
+  document.getElementById("cp-fecha").textContent = fechaTxt;
+
+  const remitenteBits = [state.email, state.telefono, state.ciudad].filter(Boolean);
+  document.getElementById("cp-remitente").innerHTML = state.nombre
+    ? `<div class="r-nombre">${escHtml(state.nombre)}</div><div class="r-contacto">${remitenteBits.map(b=>`<span>${escHtml(b)}</span>`).join("")}</div>`
+    : "";
+
+  const destBits = [];
+  if(c.reclutador) destBits.push(c.reclutador);
+  if(c.empresa) destBits.push(c.empresa);
+  document.getElementById("cp-dest").innerHTML = destBits.length ? destBits.map(escHtml).join("<br>") : "";
+
+  document.getElementById("cp-asunto").textContent = c.puesto
+    ? `Asunto: Postulación para ${c.puesto}` : "";
+
+  document.getElementById("cp-cuerpo").textContent = c.cuerpo || "";
+
+  const firmaBits = [state.nombre].filter(Boolean);
+  document.getElementById("cp-firma").innerHTML = firmaBits.length
+    ? firmaBits.map(escHtml).join("<br>") : "";
+}
+
+// ---------- Tabs ----------
+let currentTab = "cv";
+function initTabs(){
+  document.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+      currentTab = tab;
+      document.getElementById("cv-form").hidden = tab!=="cv";
+      document.getElementById("carta-form").hidden = tab!=="carta";
+      document.getElementById("cv-preview").hidden = tab!=="cv";
+      document.getElementById("carta-preview").hidden = tab!=="carta";
+      document.getElementById("cv-toolbar").hidden = tab!=="cv";
+      document.getElementById("carta-toolbar").hidden = tab!=="carta";
+    });
+  });
+}
+
+// ---------- Template switch ----------
+function initTemplate(){
+  const select = document.getElementById("templateSelect");
+  select.value = state.template;
+  select.addEventListener("change", ()=>{
+    state.template = select.value;
+    const paper = document.getElementById("cv-preview");
+    paper.classList.remove("tpl-clasico","tpl-moderno");
+    paper.classList.add(state.template);
+    save();
+  });
+  document.getElementById("cv-preview").classList.add(state.template);
+}
+
+// ---------- Download / reset ----------
+async function downloadPDF(){
+  const btn = document.getElementById("downloadBtnMain");
+  const node = document.getElementById(currentTab === "cv" ? "cv-preview" : "carta-preview");
+  const originalLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = "Generando…";
+  try{
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210, pageHeight = 297;
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    const base = (state.nombre || (currentTab==="cv" ? "CV" : "Carta")).trim().replace(/\s+/g,"_").replace(/[^\w-]/g,"");
+    const suffix = currentTab === "cv" ? "CV" : "Carta_Presentacion";
+    pdf.save(`${base}_${suffix}.pdf`);
+  }catch(e){
+    console.error("No se pudo generar el PDF", e);
+    alert("No se pudo generar el PDF. Intenta de nuevo o usa el botón Imprimir.");
+  }finally{
+    btn.disabled = false; btn.textContent = originalLabel;
+  }
+}
+
+function initActions(){
+  document.getElementById("printBtnMain").addEventListener("click", ()=>window.print());
+  document.getElementById("downloadBtnMain").addEventListener("click", downloadPDF);
+
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+    if(confirm("¿Borrar todos los datos del CV? Esta acción no se puede deshacer.")){
+      ["nombre","puesto","email","telefono","ciudad","link","resumen"].forEach(k=>state[k]="");
+      state.experiencias=[]; state.educacion=[]; state.habilidades=[]; state.idiomas=[];
+      bindSimpleFields(); renderExpForm(); renderEduForm(); renderLangForm(); renderSkillsForm(); renderCV(); save();
+    }
+  });
+  document.getElementById("resetBtnCarta").addEventListener("click", ()=>{
+    if(confirm("¿Borrar los datos de la carta?")){
+      Object.keys(state.carta).forEach(k=>state.carta[k]="");
+      bindCartaFields(); renderCarta(); save();
+    }
+  });
+
+  document.getElementById("sampleBtnCarta").addEventListener("click", ()=>{
+    state.carta.empresa = state.carta.empresa || "Nombre de la empresa";
+    state.carta.puesto = state.carta.puesto || "el puesto que te interesa";
+    state.carta.fecha = state.carta.fecha || new Date().toISOString().slice(0,10);
+    state.carta.cuerpo = state.carta.cuerpo || `Estimado/a equipo de selección,
+
+Escribo para expresar mi interés en la vacante de ${state.carta.puesto || "[puesto]"} en ${state.carta.empresa || "[empresa]"}. Cuento con experiencia en [área relevante] y creo que mis habilidades en [habilidad clave] encajan bien con lo que buscan.
+
+En mi puesto anterior logré [logro concreto con número si es posible], lo cual me permitió desarrollar [habilidad relacionada]. Me entusiasma la posibilidad de aportar ese mismo enfoque a su equipo.
+
+Quedo a su disposición para conversar más sobre cómo puedo contribuir.
+
+Atentamente,`;
+    bindCartaFields(); renderCarta(); save();
+  });
+}
+
+// ---------- Feedback (formsubmit.co, matches other tools) ----------
+const FEEDBACK_EMAIL = "tuemail@ejemplo.com"; // <-- cambia esto por tu correo real (formsubmit.co/tu-correo)
+
+function initFeedback(){
+  const modal = document.getElementById("feedbackModal");
+  const form = document.getElementById("feedbackForm");
+  form.action = `https://formsubmit.co/${FEEDBACK_EMAIL}`;
+
+  let iframe = document.getElementById("fbFrame_hidden");
+  if(!iframe){
+    iframe = document.createElement("iframe");
+    iframe.name = "fbFrame_hidden";
+    iframe.id = "fbFrame_hidden";
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+  }
+
+  document.getElementById("feedbackBtn").addEventListener("click", ()=>{ modal.hidden = false; });
+  document.getElementById("feedbackCancel").addEventListener("click", ()=>{ modal.hidden = true; });
+
+  form.addEventListener("submit", ()=>{
+    const btn = document.getElementById("feedbackSend");
+    btn.disabled = true; btn.textContent = "Enviando…";
+    setTimeout(()=>{
+      document.getElementById("feedbackModalInner").innerHTML = `
+        <h3>¡Gracias! 🙌</h3>
+        <p>Tu comentario fue enviado.</p>
+        <div class="modal-actions"><button class="btn primary" id="feedbackClose">Cerrar</button></div>
+      `;
+      document.getElementById("feedbackClose").addEventListener("click", ()=>{ modal.hidden = true; });
+    }, 900);
+  });
+}
+
+// ---------- Importar CV (PDF / Word) ----------
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+async function extractTextFromPdf(arrayBuffer){
+  const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  let text = "";
+  for(let p=1; p<=pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    let lastY=null, line="";
+    content.items.forEach(item=>{
+      if(lastY!==null && Math.abs(item.transform[5]-lastY)>2){
+        text += line + "\n";
+        line = "";
+      }
+      line += item.str + " ";
+      lastY = item.transform[5];
+    });
+    text += line + "\n\n";
+  }
+  return text;
+}
+
+async function extractTextFromDocx(arrayBuffer){
+  const result = await mammoth.extractRawText({arrayBuffer});
+  return result.value || "";
+}
+
+const SECTION_KEYWORDS = {
+  resumen: ["resumen","perfil","objetivo","sobre mi","acerca de","summary","profile","about"],
+  experiencias: ["experiencia","historial laboral","trayectoria","employment","work experience"],
+  educacion: ["educacion","formacion academica","estudios","education"],
+  habilidades: ["habilidades","competencias","skills","aptitudes"],
+  idiomas: ["idiomas","languages"]
+};
+const LANG_NAMES = ["español","espanol","ingles","inglés","frances","francés","aleman","alemán","italiano","portugues","portugués","chino","japones","japonés","coreano"];
+const LANG_LEVELS = {"basico":"Básico","básico":"Básico","intermedio":"Intermedio","avanzado":"Avanzado","nativo":"Nativo","fluido":"Avanzado","native":"Nativo"};
+
+function stripAccents(s){
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+}
+
+function parseCvText(rawText){
+  const lines = rawText.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  const found = {nombre:"",email:"",telefono:"",link:"",resumen:"",
+    experiencias:[], educacion:[], habilidades:[], idiomas:[]};
+
+  // Email / teléfono / link
+  const emailMatch = rawText.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  if(emailMatch) found.email = emailMatch[0];
+  const phoneMatch = rawText.match(/(\+?\d[\d\s().-]{7,}\d)/);
+  if(phoneMatch) found.telefono = phoneMatch[0].trim();
+  const linkMatch = rawText.match(/(linkedin\.com\/[^\s,;|]+|github\.com\/[^\s,;|]+|https?:\/\/[^\s,;|]+)/i);
+  if(linkMatch) found.link = linkMatch[0];
+
+  // Nombre: primera línea "razonable" que no sea email/teléfono/encabezado de sección
+  for(const l of lines.slice(0,5)){
+    const low = stripAccents(l);
+    const isSection = Object.values(SECTION_KEYWORDS).flat().some(k=>low===stripAccents(k));
+    if(l.length>1 && l.length<60 && !l.includes("@") && !/\d{5,}/.test(l) && !isSection){
+      found.nombre = l;
+      break;
+    }
+  }
+
+  // Detectar bloques de sección
+  const sectionStarts = [];
+  lines.forEach((l,i)=>{
+    const low = stripAccents(l);
+    for(const key in SECTION_KEYWORDS){
+      if(SECTION_KEYWORDS[key].some(k=>low===stripAccents(k) || low.startsWith(stripAccents(k)+" ") )){
+        sectionStarts.push({key, index:i});
+        return;
+      }
+    }
+  });
+  sectionStarts.sort((a,b)=>a.index-b.index);
+
+  for(let s=0; s<sectionStarts.length; s++){
+    const {key, index} = sectionStarts[s];
+    const end = s+1<sectionStarts.length ? sectionStarts[s+1].index : lines.length;
+    const blockLines = lines.slice(index+1, end);
+    if(key==="resumen"){
+      found.resumen = blockLines.join(" ").slice(0,900);
+    } else if(key==="habilidades"){
+      blockLines.join(", ").split(/[,;•·|]/).map(s=>s.trim()).filter(Boolean).forEach(s=>{
+        if(s.length<40) found.habilidades.push(s);
+      });
+    } else if(key==="idiomas"){
+      blockLines.forEach(l=>{
+        const low = stripAccents(l);
+        const langFound = LANG_NAMES.find(n=>low.includes(stripAccents(n)));
+        let nivel = "";
+        for(const lvKey in LANG_LEVELS){ if(low.includes(lvKey)){ nivel = LANG_LEVELS[lvKey]; break; } }
+        if(langFound){
+          found.idiomas.push({idioma: l.split(/[-–:|]/)[0].trim(), nivel});
+        }
+      });
+    } else if(key==="experiencias" || key==="educacion"){
+      // Agrupar por párrafos: una línea en blanco original se perdió al filtrar,
+      // así que agrupamos de a 2-3 líneas por entrada como aproximación.
+      let chunk = [];
+      const chunks = [];
+      blockLines.forEach(l=>{
+        chunk.push(l);
+        if(chunk.length>=3){ chunks.push(chunk); chunk=[]; }
+      });
+      if(chunk.length) chunks.push(chunk);
+      chunks.forEach(c=>{
+        if(key==="experiencias"){
+          found.experiencias.push({puesto:c[0]||"", empresa:c[1]||"", ciudad:"", inicio:"", fin:"", descripcion:c.slice(2).join(" ")});
+        } else {
+          found.educacion.push({titulo:c[0]||"", institucion:c[1]||"", inicio:"", fin:""});
+        }
+      });
+    }
+  }
+  return found;
+}
+
+function applyImportedCv(found){
+  // Campos simples: solo si están vacíos, para no pisar lo que ya escribiste
+  const simpleMap = {nombre:"f-nombre", email:"f-email", telefono:"f-telefono", link:"f-link"};
+  Object.entries(simpleMap).forEach(([key,id])=>{
+    if(found[key] && !state[key]){
+      state[key] = found[key];
+      document.getElementById(id).value = found[key];
+    }
+  });
+  if(found.resumen && !state.resumen){
+    state.resumen = found.resumen;
+    document.getElementById("f-resumen").value = found.resumen;
+  }
+
+  // Listas repetibles: se añaden a lo que ya tengas
+  if(found.experiencias.length){
+    if(state.experiencias.length===1 && !state.experiencias[0].puesto && !state.experiencias[0].descripcion){
+      state.experiencias = [];
+    }
+    found.experiencias.forEach(exp=>addExp(exp));
+  }
+  if(found.educacion.length){
+    if(state.educacion.length===1 && !state.educacion[0].titulo){
+      state.educacion = [];
+    }
+    found.educacion.forEach(edu=>addEdu(edu));
+  }
+  if(found.idiomas.length){
+    if(state.idiomas.length===1 && !state.idiomas[0].idioma){
+      state.idiomas = [];
+    }
+    found.idiomas.forEach(l=>addLang(l));
+  }
+  found.habilidades.forEach(s=>{
+    if(!state.habilidades.includes(s)) state.habilidades.push(s);
+  });
+
+  renderExpForm(); renderEduForm(); renderLangForm(); renderSkillsForm(); renderCV(); save();
+}
+
+function initImportCv(){
+  const btn = document.getElementById("importCvBtn");
+  const fileInput = document.getElementById("importCvFile");
+  const status = document.getElementById("importCvStatus");
+  btn.addEventListener("click", ()=> fileInput.click());
+  fileInput.addEventListener("change", async ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    status.className = "import-status";
+    status.textContent = "Leyendo tu CV…";
+    try{
+      const ext = file.name.split(".").pop().toLowerCase();
+      const buffer = await file.arrayBuffer();
+      let text = "";
+      if(ext==="pdf"){
+        text = await extractTextFromPdf(buffer);
+      } else if(ext==="docx"){
+        text = await extractTextFromDocx(buffer);
+      } else {
+        status.className = "import-status err";
+        status.textContent = "Formato no compatible. Sube un .pdf o un .docx (si tu CV es .doc, guárdalo como .docx desde Word primero).";
+        fileInput.value = "";
+        return;
+      }
+      if(!text.trim()){
+        status.className = "import-status err";
+        status.textContent = "No se pudo leer texto de ese archivo (¿es una imagen escaneada?). Prueba con otro archivo o llena el formulario manualmente.";
+        fileInput.value = "";
+        return;
+      }
+      const found = parseCvText(text);
+      applyImportedCv(found);
+      status.className = "import-status ok";
+      status.textContent = "Listo — revisa y corrige los campos, la lectura automática no siempre es exacta.";
+    }catch(e){
+      console.error("Error importando CV", e);
+      status.className = "import-status err";
+      status.textContent = "No se pudo procesar ese archivo. Intenta con otro o llena el formulario manualmente.";
+    }
+    fileInput.value = "";
+  });
+}
+
+// ---------- Init ----------
+load();
+bindSimpleFields();
+bindCartaFields();
+renderExpForm();
+renderEduForm();
+renderLangForm();
+renderSkillsForm();
+initSkillInput();
+initTabs();
+initTemplate();
+initActions();
+initFeedback();
+initImportCv();
+renderCV();
+renderCarta();
+
+if(state.experiencias.length===0) addExp();
+if(state.educacion.length===0) addEdu();
+if(state.idiomas.length===0) addLang();
+</script>
+</body>
+</html>
