@@ -71,10 +71,13 @@ header .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
 .modal button.btn.primary:hover{opacity:0.92;}
 .modal button.btn:disabled{opacity:0.5;cursor:not-allowed;}
 
+@page{
+  margin:0;
+}
 @media print{
   header, .formcol, button.download, #fbOpenBtn{display:none !important;}
   body, .shell, .previewcol{overflow:visible !important;background:#fff !important;padding:0 !important;height:auto !important;}
-  .sheet{box-shadow:none !important;max-width:100% !important;}
+  .sheet{box-shadow:none !important;max-width:100% !important;padding:24px 28px !important;}
 }
 
 .shell{flex:1;display:flex;min-height:0;}

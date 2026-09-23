@@ -199,11 +199,12 @@ button.icon{padding:7px 9px;}
   position:absolute;border-radius:2px;cursor:move;user-select:none;touch-action:none;
 }
 .overlay-text{
-  border:1px dashed var(--teal);background:rgba(18,84,90,0.06);
+  border:1px dashed transparent;background:transparent;
   padding:1px 3px;color:#12303a;font-family:Helvetica,Arial,sans-serif;line-height:1.15;
   outline:none;overflow:hidden;white-space:pre-wrap;
 }
-.overlay-text:focus{border-style:solid;}
+.overlay-text:hover{border-color:rgba(18,84,90,0.5);background:rgba(18,84,90,0.06);}
+.overlay-text:focus{border-color:var(--teal);border-style:solid;background:rgba(18,84,90,0.06);}
 .overlay-rect{background:#000;border:1px solid rgba(255,255,255,.3);}
 .overlay-sign{border:1px dashed var(--accent);}
 .overlay-sign img{width:100%;height:100%;display:block;pointer-events:none;}
@@ -219,6 +220,9 @@ button.icon{padding:7px 9px;}
   position:absolute;right:-4px;bottom:-4px;width:12px;height:12px;background:var(--teal);
   border-radius:2px;cursor:nwse-resize;
 }
+.overlay-text .del, .overlay-text .grip{opacity:0;pointer-events:none;transition:opacity .1s;}
+.overlay-text:hover .del, .overlay-text:hover .grip,
+.overlay-text:focus .del, .overlay-text:focus .grip{opacity:1;pointer-events:auto;}
 .overlay-rect .grip{background:#fff;border:1px solid #000;}
 
 .tool-hint{padding:10px 20px;color:var(--ink-soft);font-size:0.8rem;border-bottom:1px solid var(--line);background:var(--paper);}
@@ -241,6 +245,17 @@ button.icon{padding:7px 9px;}
   nav.tools button{justify-content:center;padding:10px 4px;}
   nav.tools button span.lbl{display:none;}
   .panel-head{padding:12px 14px;}
+}
+
+@page{
+  margin:0;
+}
+@media print{
+  header, nav.tools, .panel-head, .tool-hint, .zoom-bar, .overlay-el .del, .overlay-el .grip{display:none !important;}
+  body, .shell, main, .content{overflow:visible !important;background:#fff !important;height:auto !important;}
+  .pages{padding:0 !important;gap:0 !important;}
+  .page-wrap{box-shadow:none !important;page-break-after:always;}
+  .overlay-text{border-color:transparent !important;background:transparent !important;}
 }
 </style>
 </head>
@@ -701,7 +716,8 @@ function initEditor(mode){
       el.contentEditable='true';
       el.style.fontSize=(o.fontSizePt*scale)+'px';
       el.textContent=o.text||'';
-      el.addEventListener('input', ()=>{ o.text=el.textContent; });
+      el.addEventListener('input', ()=>{ o.text=el.innerText; });
+      el.addEventListener('blur', ()=>{ o.text=el.innerText; });
     } else if(o.type==='sign'){
       const img=document.createElement('img'); img.src=o.img; el.appendChild(img);
     } else if(o.type==='check'){
@@ -812,9 +828,14 @@ function initEditor(mode){
       panelActions.appendChild(makePlaceBtn('check','✓ Check'));
       panelActions.appendChild(makePlaceBtn('cross','✗ X'));
     }
+    const printBtn=document.createElement('button');
+    printBtn.className='btn'; printBtn.textContent='Imprimir';
+    printBtn.onclick=()=>window.print();
+    panelActions.appendChild(printBtn);
+
     const saveBtn=document.createElement('button');
     saveBtn.className='btn primary'; saveBtn.textContent='Guardar y descargar';
-    saveBtn.onclick=exportPdf;
+    saveBtn.onclick=()=>exportPdf(saveBtn);
     panelActions.appendChild(saveBtn);
   }
 
@@ -860,7 +881,34 @@ function initEditor(mode){
     };
   }
 
-  async function exportPdf(){
+  async function exportPdf(btn){
+    // asegura que el texto que se estaba editando en ese momento quede guardado
+    // (dispara el listener 'blur', que actualiza o.text por cierre/closure)
+    if(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('overlay-text')){
+      document.activeElement.blur();
+    }
+    if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+    try{
+      await doExportPdf();
+    }catch(err){
+      console.error(err);
+      alert('No se pudo guardar el PDF. Detalle: '+(err && err.message ? err.message : err));
+    }finally{
+      if(btn){ btn.disabled=false; btn.textContent='Guardar y descargar'; }
+    }
+  }
+
+  function sanitizeForPdf(str){
+    return str
+      .replace(/[\u2018\u2019]/g,"'")
+      .replace(/[\u201C\u201D]/g,'"')
+      .replace(/\u2013/g,'-')
+      .replace(/\u2014/g,'-')
+      .replace(/\u2026/g,'...')
+      .replace(/[^\x00-\xFF]/g,'?'); // fuera de Latin-1/WinAnsi: reemplaza por '?' en vez de fallar
+  }
+
+  async function doExportPdf(){
     const out = await PDFDocument.load(bytes, {ignoreEncryption:true});
     const font = await out.embedFont(StandardFonts.Helvetica);
     const pages = out.getPages();
@@ -873,10 +921,16 @@ function initEditor(mode){
         if(!o.text) continue;
         const lines = o.text.split('\n');
         lines.forEach((line, li)=>{
-          page.drawText(line, {
+          const opts = {
             x:o.xPt+2, y: pageH-o.yPt-o.fontSizePt*(li+1)+2,
             size:o.fontSizePt, font, color: rgb(0.07,0.19,0.23)
-          });
+          };
+          try{
+            page.drawText(line, opts);
+          }catch(e){
+            // algún carácter no soportado por la fuente (comillas curvas, emoji, etc.) — lo saneamos y reintentamos
+            page.drawText(sanitizeForPdf(line), opts);
+          }
         });
       } else if(o.type==='sign'){
         const pngBytes = await (await fetch(o.img)).arrayBuffer();
