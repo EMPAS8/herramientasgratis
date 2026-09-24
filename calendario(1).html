@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de Calendario Imprimible</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --paper:#EDEAE0; --paper-2:#E2DDCC;
+  --card:#FBFAF5; --line:#C9C0AC;
+  --ink:#221F1B; --ink-soft:#6B6455;
+  --accent:#AE3B2C; --accent-ink:#FBFAF5;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A1712; --paper-2:#23201A;
+    --card:#26221B; --line:#443E30;
+    --ink:#EFE9DA; --ink-soft:#B0A68F;
+    --accent:#E0664F; --accent-ink:#1A1712;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A1712; --paper-2:#23201A;
+  --card:#26221B; --line:#443E30;
+  --ink:#EFE9DA; --ink-soft:#B0A68F;
+  --accent:#E0664F; --accent-ink:#1A1712;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;min-height:100%;
+}
+h1,h2{font-family:"Source Serif 4",Georgia,serif;margin:0;}
+
+header{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 20px 12px;
+  border-bottom:1px solid var(--line);background:var(--paper);flex-shrink:0;
+}
+header h1{font-size:1.2rem;font-weight:600;}
+header .tag{color:var(--ink-soft);font-size:0.8rem;}
+header .back{color:var(--ink-soft);text-decoration:none;font-size:0.82rem;}
+header .back:hover{color:var(--accent);}
+header .fb-btn{
+  margin-left:auto;flex-shrink:0;font-family:inherit;font-size:0.82rem;
+  padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+header .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.shell{flex:1;display:flex;min-height:0;}
+.formcol{width:min(340px,42vw);min-width:270px;border-right:1px solid var(--line);overflow-y:auto;padding:18px 18px 100px;}
+.previewcol{flex:1;overflow:auto;background:var(--paper-2);display:flex;align-items:flex-start;justify-content:center;padding:24px;}
+
+.section{margin-bottom:20px;}
+.section h2{font-size:0.86rem;color:var(--ink-soft);font-weight:600;font-family:inherit;margin-bottom:8px;}
+label{display:block;font-size:0.76rem;color:var(--ink-soft);margin:10px 0 4px;}
+label:first-of-type{margin-top:0;}
+input[type=text],input[type=number],select{
+  width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-family:inherit;font-size:0.86rem;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.color-input{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;}
+.color-input input[type="color"]{width:30px;height:30px;border:none;background:none;padding:0;cursor:pointer;}
+.color-input span{font-size:0.8rem;color:var(--ink-soft);}
+
+.hint{color:var(--ink-soft);font-size:0.76rem;line-height:1.5;margin-top:14px;}
+
+button.btn{
+  font-family:inherit;font-size:0.84rem;padding:9px 14px;border-radius:7px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;width:100%;
+}
+button.btn:hover{border-color:var(--accent);color:var(--accent);}
+
+#eventList{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.event-row{
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--card);border:1px solid var(--line);border-radius:7px;
+  padding:8px 10px;font-size:0.8rem;
+}
+.event-row .ev-info{flex:1;line-height:1.4;}
+.event-row .ev-day{color:var(--accent);font-weight:600;}
+.event-row .ev-time{color:var(--ink-soft);}
+.event-row .ev-del{
+  background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:0.9rem;
+  line-height:1;padding:2px 4px;flex-shrink:0;
+}
+.event-row .ev-del:hover{color:var(--accent);}
+.empty-events{color:var(--ink-soft);font-size:0.78rem;margin-top:10px;}
+
+.sheet{
+  background:#fff;color:#1a1a1a;width:100%;max-width:760px;aspect-ratio:1.414/1;
+  box-shadow:0 1px 4px rgba(0,0,0,.2);border-radius:6px;padding:24px;
+  display:flex;flex-direction:column;
+}
+.sheet .cal-title{font-family:"Source Serif 4",Georgia,serif;font-size:1.5rem;font-weight:600;text-align:center;margin-bottom:14px;color:#1a1a1a;}
+.cal-grid{flex:1;display:grid;grid-template-rows:auto 1fr;gap:0;border:1px solid #ccc;border-radius:6px;overflow:hidden;}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-weekdays div{
+  padding:8px 4px;text-align:center;font-size:0.72rem;font-weight:600;color:#fff;
+  text-transform:uppercase;letter-spacing:0.03em;
+}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;}
+.cal-days .cell{border-top:1px solid #e0e0e0;border-right:1px solid #e0e0e0;padding:6px;font-size:0.85rem;color:#333;min-height:60px;display:flex;flex-direction:column;gap:2px;}
+.cal-days .cell:nth-child(7n){border-right:none;}
+.cal-days .cell.empty{background:#fafafa;}
+.cal-days .cell .daynum{font-size:0.85rem;color:#333;}
+.cal-days .cell .ev-bullet{
+  font-size:0.66rem;line-height:1.25;color:#333;
+  display:flex;gap:3px;align-items:flex-start;
+}
+.cal-days .cell .ev-bullet .dot{flex-shrink:0;}
+.cal-days .cell .ev-bullet .txt{overflow-wrap:anywhere;}
+
+.bottombar{
+  display:flex;gap:8px;position:fixed;bottom:14px;left:18px;
+  width:min(300px, calc(42vw - 36px));min-width:264px;
+}
+button.download{
+  flex:1;padding:13px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:0.9rem;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+button.download.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:500;}
+button.download:hover{opacity:0.92;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;}
+.modal{background:var(--paper);border-radius:10px;padding:18px;width:min(420px,100%);}
+.modal h3{margin-bottom:10px;font-size:1rem;font-family:"Source Serif 4",Georgia,serif;}
+.modal textarea{width:100%;min-height:74px;resize:vertical;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal input[type="email"]{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal .mrow{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+.modal button.btn{width:auto;font-family:inherit;font-size:0.84rem;padding:9px 14px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;}
+.modal button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+
+@media (max-width:760px){
+  .shell{flex-direction:column;overflow-y:auto;}
+  .formcol{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:none;}
+  .previewcol{padding:16px;}
+  .bottombar{max-width:calc(100vw - 36px);width:calc(100vw - 36px);left:18px;}
+}
+@media print{
+  header,.formcol,.bottombar{display:none !important;}
+  body,.shell,.previewcol{overflow:visible !important;background:#fff !important;padding:0 !important;height:auto !important;}
+  .sheet{box-shadow:none !important;max-width:100% !important;}
+}
+::-webkit-scrollbar{width:11px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Herramientas Gratis</a>
+  <h1>Generador de Calendario</h1>
+  <span class="tag">calendario mensual imprimible — gratis, sin cuentas</span>
+  <button class="fb-btn" id="fbOpenBtn">💬 Comentarios / errores</button>
+</header>
+
+<div class="shell">
+  <div class="formcol">
+    <div class="section">
+      <h2>Mes</h2>
+      <div class="row2">
+        <div>
+          <label>Mes</label>
+          <select id="monthSelect"></select>
+        </div>
+        <div>
+          <label>Año</label>
+          <input type="number" id="yearInput" value="2026">
+        </div>
+      </div>
+
+      <label>La semana empieza en</label>
+      <select id="weekStart">
+        <option value="1" selected>Lunes</option>
+        <option value="0">Domingo</option>
+      </select>
+
+      <label>Título (opcional)</label>
+      <input type="text" id="titleInput" placeholder="Se genera automático si lo dejas vacío">
+
+      <label>Color de acento</label>
+      <div class="color-input"><input type="color" id="accentColor" value="#AE3B2C"><span>Encabezado</span></div>
+    </div>
+
+    <div class="section">
+      <h2>Eventos</h2>
+      <button class="btn" id="addEventBtn">+ Añadir evento</button>
+      <div id="eventList"></div>
+    </div>
+
+    <p class="hint">Se genera en tu navegador — nada se sube a ningún servidor.</p>
+  </div>
+
+  <div class="previewcol">
+    <div class="sheet" id="sheet">
+      <div class="cal-title" id="calTitle"></div>
+      <div class="cal-grid">
+        <div class="cal-weekdays" id="calWeekdays"></div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottombar">
+  <button class="download secondary" id="printBtn">Imprimir</button>
+  <button class="download" id="downloadBtn">Descargar PDF</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let events = []; // {year, month, day, time: '' | 'HH:MM', text}
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_LUN = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const DIAS_DOM = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+MESES.forEach((m,i)=>{
+  const opt = document.createElement('option');
+  opt.value = i; opt.textContent = m;
+  $('monthSelect').appendChild(opt);
+});
+const today = new Date();
+$('monthSelect').value = today.getMonth();
+$('yearInput').value = today.getFullYear();
+
+function getMonthMatrix(year, month, weekStartMon){
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  let startOffset = firstDay.getDay(); // 0=Sun
+  if(weekStartMon) startOffset = (startOffset+6)%7; // shift so Mon=0
+
+  const cells = [];
+  for(let i=0;i<startOffset;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function render(){
+  const month = parseInt($('monthSelect').value,10);
+  const year = parseInt($('yearInput').value,10) || today.getFullYear();
+  const weekStartMon = $('weekStart').value === '1';
+  const accent = $('accentColor').value;
+  const title = $('titleInput').value.trim() || `${MESES[month]} ${year}`;
+
+  $('calTitle').textContent = title;
+
+  const dayNames = weekStartMon ? DIAS_LUN : DIAS_DOM;
+  $('calWeekdays').innerHTML = dayNames.map(d=>`<div style="background:${accent}">${d}</div>`).join('');
+
+  const cells = getMonthMatrix(year, month, weekStartMon);
+  $('calDays').innerHTML = cells.map(d=>{
+    if(d === null) return `<div class="cell empty"></div>`;
+    const dayEvents = eventsForCell(year, month, d);
+    const bullets = dayEvents
+      .sort((a,b)=> (a.time||'').localeCompare(b.time||''))
+      .map(e=> `<div class="ev-bullet"><span class="dot">•</span><span class="txt">${e.time ? e.time+' — ' : ''}${escapeHtml(e.text)}</span></div>`)
+      .join('');
+    return `<div class="cell"><span class="daynum">${d}</span>${bullets}</div>`;
+  }).join('');
+}
+['monthSelect','yearInput','weekStart','titleInput','accentColor'].forEach(id=>{
+  $(id).addEventListener('input', render);
+});
+render();
+
+/* ---------- eventos ---------- */
+
+function eventsForCell(year, month, day){
+  return events.filter(e=> e.year===year && e.month===month && e.day===day);
+}
+
+function renderEventList(){
+  const list = $('eventList');
+  if(events.length === 0){
+    list.innerHTML = `<p class="empty-events">Todavía no has añadido eventos.</p>`;
+    return;
+  }
+  const sorted = [...events].sort((a,b)=> a.year-b.year || a.month-b.month || a.day-b.day || (a.time||'').localeCompare(b.time||''));
+  list.innerHTML = sorted.map(e=>{
+    const idx = events.indexOf(e);
+    const fecha = `${e.day} ${MESES[e.month].slice(0,3)}`;
+    return `<div class="event-row">
+      <div class="ev-info"><span class="ev-day">${fecha}</span>${e.time ? ` · <span class="ev-time">${e.time}</span>` : ''}<br>${escapeHtml(e.text)}</div>
+      <button class="ev-del" data-idx="${idx}" title="Eliminar">✕</button>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.ev-del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      events.splice(parseInt(btn.dataset.idx,10),1);
+      renderEventList();
+      render();
+    });
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function openAddEventModal(){
+  const month = parseInt($('monthSelect').value,10);
+  const year = parseInt($('yearInput').value,10) || today.getFullYear();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+
+  const bg = document.createElement('div'); bg.className='modal-bg';
+  let dayOptions = '';
+  for(let d=1; d<=daysInMonth; d++){
+    dayOptions += `<option value="${d}">${d}</option>`;
+  }
+  let hourOptions = '<option value="">Sin hora</option>';
+  for(let h=0; h<24; h++){
+    for(let m of [0,30]){
+      const hh = String(h).padStart(2,'0'), mm = String(m).padStart(2,'0');
+      hourOptions += `<option value="${hh}:${mm}">${hh}:${mm}</option>`;
+    }
+  }
+
+  bg.innerHTML = `<div class="modal">
+    <h3>+ Añadir evento</h3>
+    <label style="display:block;font-size:0.78rem;color:var(--ink-soft);margin:0 0 4px;">Día</label>
+    <select id="evDay" style="width:100%;margin-bottom:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-family:inherit;font-size:0.88rem;">${dayOptions}</select>
+    <label style="display:block;font-size:0.78rem;color:var(--ink-soft);margin:0 0 4px;">Hora (opcional)</label>
+    <select id="evHour" style="width:100%;margin-bottom:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-family:inherit;font-size:0.88rem;">${hourOptions}</select>
+    <label style="display:block;font-size:0.78rem;color:var(--ink-soft);margin:0 0 4px;">Texto del evento</label>
+    <textarea id="evText" placeholder="Ej. Cita con el dentista" required></textarea>
+    <div class="mrow">
+      <button type="button" class="btn" id="evCancel">Cancelar</button>
+      <button type="button" class="btn primary" id="evSave">Añadir</button>
+    </div>
+  </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#evCancel').onclick = ()=> bg.remove();
+  bg.querySelector('#evSave').onclick = ()=>{
+    const text = bg.querySelector('#evText').value.trim();
+    if(!text){ bg.querySelector('#evText').focus(); return; }
+    const day = parseInt(bg.querySelector('#evDay').value,10);
+    const time = bg.querySelector('#evHour').value;
+    events.push({ year, month, day, time, text });
+    bg.remove();
+    renderEventList();
+    render();
+  };
+}
+$('addEventBtn').addEventListener('click', openAddEventModal);
+renderEventList();
+
+/* ---------- print ---------- */
+$('printBtn').addEventListener('click', ()=> window.print());
+
+/* ---------- download (vector PDF, drawn directly) ---------- */
+let _downloadsNS=null;
+async function getDownloads(){
+  if(_downloadsNS!==null) return _downloadsNS;
+  try{ if(window.claude && window.claude.use) _downloadsNS = await window.claude.use('downloads'); }
+  catch(e){ _downloadsNS=null; }
+  return _downloadsNS;
+}
+async function saveFile(blob, name){
+  const dl = await getDownloads();
+  if(dl){ try{ await dl.save({filename:name, data:blob}); return; }catch(e){} }
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+function hexToRgb(hex){
+  const n = parseInt(hex.replace('#',''),16);
+  return [(n>>16)&255, (n>>8)&255, n&255];
+}
+
+$('downloadBtn').addEventListener('click', async ()=>{
+  const btn = $('downloadBtn');
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try{
+    const month = parseInt($('monthSelect').value,10);
+    const year = parseInt($('yearInput').value,10) || today.getFullYear();
+    const weekStartMon = $('weekStart').value === '1';
+    const accent = $('accentColor').value;
+    const title = $('titleInput').value.trim() || `${MESES[month]} ${year}`;
+    const dayNames = weekStartMon ? DIAS_LUN : DIAS_DOM;
+    const cells = getMonthMatrix(year, month, weekStartMon);
+    const rows = cells.length/7;
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('l','mm','a4');
+    const pageW = 297, pageH = 210, margin = 14;
+    const gridW = pageW - margin*2;
+    const gridTop = margin + 16;
+    const gridH = pageH - gridTop - margin;
+    const colW = gridW/7;
+    const headerH = 10;
+    const rowH = (gridH-headerH)/rows;
+    const [ar,ag,ab] = hexToRgb(accent);
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(20);
+    pdf.setTextColor(30,30,30);
+    pdf.text(title, pageW/2, margin+6, { align:'center' });
+
+    pdf.setFillColor(ar,ag,ab);
+    pdf.rect(margin, gridTop, gridW, headerH, 'F');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255,255,255);
+    dayNames.forEach((d,i)=>{
+      pdf.text(d.toUpperCase(), margin + colW*i + colW/2, gridTop+headerH/2+3, { align:'center' });
+    });
+
+    pdf.setDrawColor(200,200,200);
+    pdf.setTextColor(50,50,50);
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(10);
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<7;c++){
+        const idx = r*7+c;
+        const x = margin + colW*c;
+        const y = gridTop + headerH + rowH*r;
+        pdf.rect(x, y, colW, rowH);
+        const val = cells[idx];
+        if(val !== null){
+          pdf.text(String(val), x+3, y+6);
+          const dayEvents = eventsForCell(year, month, val)
+            .sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+          pdf.setFontSize(6.5);
+          let ty = y+10.5;
+          dayEvents.forEach(ev=>{
+            if(ty > y+rowH-2) return; // no cabe más
+            const label = (ev.time ? ev.time+' ' : '') + ev.text;
+            const maxChars = Math.max(6, Math.floor(colW*2.3));
+            const short = label.length > maxChars ? label.slice(0,maxChars-1)+'…' : label;
+            pdf.text('• '+short, x+2, ty);
+            ty += 3.2;
+          });
+          pdf.setFontSize(10);
+        }
+      }
+    }
+
+    const blob = pdf.output('blob');
+    await saveFile(blob, `calendario-${MESES[month].toLowerCase()}-${year}.pdf`);
+  }catch(e){
+    console.error(e);
+    alert('No se pudo generar el PDF. Intenta de nuevo.');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Descargar PDF';
+  }
+});
+
+/* ================= FEEDBACK ================= */
+document.getElementById('fbOpenBtn').addEventListener('click', openFeedbackModal);
+function openFeedbackModal(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal">
+    <h3>💬 ¿Falta algo o algo no sirve?</h3>
+    <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.82rem;line-height:1.5;">Cuéntame qué herramienta te gustaría ver, o repórtame si algo está fallando.</p>
+    <form action="https://formsubmit.co/musica.wasd@gmail.com" method="POST" target="fbFrame_hidden">
+      <input type="hidden" name="_subject" value="Calendario Feedback">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="email" name="Tu correo (opcional)" placeholder="Tu correo (opcional, por si quieres respuesta)">
+      <textarea name="Mensaje" placeholder="Escribe tu recomendación o problema aquí..." required></textarea>
+      <div class="mrow">
+        <button type="button" class="btn" id="fbCancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="fbSubmit">Enviar</button>
+      </div>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let iframe = document.getElementById('fbFrame_hidden');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.name='fbFrame_hidden'; iframe.id='fbFrame_hidden'; iframe.style.display='none';
+    document.body.appendChild(iframe);
+  }
+
+  const form = bg.querySelector('form');
+  bg.querySelector('#fbCancel').onclick = ()=> bg.remove();
+  form.addEventListener('submit', ()=>{
+    const btn = bg.querySelector('#fbSubmit');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    setTimeout(()=>{
+      bg.innerHTML = `<div class="modal"><h3>¡Gracias! 🙌</h3>
+        <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.88rem;">Tu comentario fue enviado.</p>
+        <div class="mrow"><button class="btn primary" id="fbClose">Cerrar</button></div></div>`;
+      bg.querySelector('#fbClose').onclick = ()=> bg.remove();
+    }, 900);
+  });
+}
+</script>
+</body>
+</html>
