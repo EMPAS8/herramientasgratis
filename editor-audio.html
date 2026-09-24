@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Editor de Audio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<style>
+:root{
+  --paper:#EDEAE0; --paper-2:#E2DDCC;
+  --card:#FBFAF5; --line:#C9C0AC;
+  --ink:#221F1B; --ink-soft:#6B6455;
+  --accent:#AE3B2C; --accent-ink:#FBFAF5;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1A1712; --paper-2:#23201A;
+    --card:#26221B; --line:#443E30;
+    --ink:#EFE9DA; --ink-soft:#B0A68F;
+    --accent:#E0664F; --accent-ink:#1A1712;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1A1712; --paper-2:#23201A;
+  --card:#26221B; --line:#443E30;
+  --ink:#EFE9DA; --ink-soft:#B0A68F;
+  --accent:#E0664F; --accent-ink:#1A1712;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;min-height:100%;
+}
+h1,h2{font-family:"Source Serif 4",Georgia,serif;margin:0;}
+
+header{
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 20px 12px;
+  border-bottom:1px solid var(--line);background:var(--paper);flex-shrink:0;
+}
+header h1{font-size:1.2rem;font-weight:600;}
+header .tag{color:var(--ink-soft);font-size:0.8rem;}
+header .back{color:var(--ink-soft);text-decoration:none;font-size:0.82rem;}
+header .back:hover{color:var(--accent);}
+header .fb-btn{
+  margin-left:auto;flex-shrink:0;font-family:inherit;font-size:0.82rem;
+  padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap;
+}
+header .fb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.shell{flex:1;display:flex;min-height:0;}
+.formcol{width:min(400px,42vw);min-width:300px;border-right:1px solid var(--line);overflow-y:auto;padding:18px 18px 100px;}
+.previewcol{flex:1;overflow:auto;background:var(--paper-2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;gap:16px;}
+
+.section{margin-bottom:22px;}
+.section h2{font-size:0.86rem;color:var(--ink-soft);font-weight:600;font-family:inherit;margin-bottom:8px;}
+label{display:block;font-size:0.76rem;color:var(--ink-soft);margin:10px 0 4px;}
+label:first-of-type{margin-top:0;}
+input[type=text],input[type=number],select{
+  width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-family:inherit;font-size:0.86rem;
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.dropzone{
+  border:1.5px dashed var(--line);border-radius:10px;padding:40px 16px;
+  text-align:center;color:var(--ink-soft);font-size:0.86rem;cursor:pointer;
+}
+.dropzone:hover{border-color:var(--accent);color:var(--ink);}
+.dropzone strong{color:var(--ink);}
+
+.fileinfo{font-size:0.82rem;color:var(--ink-soft);margin-bottom:6px;}
+
+button.btn{
+  font-family:inherit;font-size:0.84rem;padding:9px 14px;border-radius:7px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;width:100%;
+}
+button.btn:hover{border-color:var(--ink-soft);}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+button.btn.primary:hover{opacity:0.92;}
+button.btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+.hint{color:var(--ink-soft);font-size:0.76rem;line-height:1.5;margin-top:8px;text-align:center;}
+
+audio{width:100%;max-width:420px;}
+#waveWrap{width:100%;max-width:420px;height:90px;background:var(--card);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#waveCanvas{width:100%;height:100%;}
+.empty{color:var(--ink-soft);font-size:0.9rem;text-align:center;}
+
+.bottombar{
+  display:flex;flex-direction:column;gap:6px;position:fixed;bottom:14px;left:18px;
+  width:min(364px, calc(42vw - 36px));min-width:264px;
+}
+button.download{
+  padding:13px;border-radius:8px;border:none;background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:0.9rem;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+button.download:hover{opacity:0.92;}
+button.download:disabled{opacity:0.5;cursor:not-allowed;}
+.progress-track{width:100%;height:5px;border-radius:3px;background:var(--line);overflow:hidden;display:none;}
+.progress-track.show{display:block;}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width .15s ease;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;}
+.modal{background:var(--paper);border-radius:10px;padding:18px;width:min(420px,100%);}
+.modal h3{margin-bottom:10px;font-size:1rem;font-family:"Source Serif 4",Georgia,serif;}
+.modal textarea{width:100%;min-height:74px;resize:vertical;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal input[type="email"]{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:0.88rem;margin-bottom:10px;}
+.modal .mrow{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;}
+.modal button.btn{width:auto;}
+
+@media (max-width:760px){
+  .shell{flex-direction:column;overflow-y:auto;}
+  .formcol{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:none;}
+  .previewcol{padding:16px;}
+  .bottombar{max-width:calc(100vw - 36px);width:calc(100vw - 36px);left:18px;}
+}
+::-webkit-scrollbar{width:11px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Herramientas Gratis</a>
+  <h1>Editor de Audio</h1>
+  <span class="tag">cambiar formato, frecuencia y recortar — gratis, sin cuentas</span>
+  <button class="fb-btn" id="fbOpenBtn">💬 Comentarios / errores</button>
+</header>
+
+<div class="shell">
+  <div class="formcol" id="formcol">
+
+    <div class="section" id="uploadSection">
+      <h2>Audio</h2>
+      <div class="dropzone" id="dropzone"><strong>Haz clic para elegir</strong> o arrastra un audio aquí<br>(MP3, WAV, OGG, M4A…)</div>
+      <input type="file" id="fileInput" accept="audio/*" style="display:none;">
+      <div class="fileinfo" id="fileInfo"></div>
+    </div>
+
+    <div id="editSection" style="display:none;">
+      <div class="section">
+        <h2>Formato y calidad</h2>
+        <label>Formato de salida</label>
+        <select id="outFormat">
+          <option value="mp3">MP3</option>
+          <option value="wav">WAV</option>
+          <option value="ogg">OGG</option>
+          <option value="aac">AAC (M4A)</option>
+        </select>
+
+        <label>Frecuencia de muestreo</label>
+        <select id="sampleRate">
+          <option value="44100" selected>44.1 kHz (estándar)</option>
+          <option value="48000">48 kHz</option>
+          <option value="22050">22.05 kHz</option>
+        </select>
+
+        <label id="bitrateLabel">Calidad (bitrate)</label>
+        <select id="bitrate">
+          <option value="320">320 kbps</option>
+          <option value="256">256 kbps</option>
+          <option value="192" selected>192 kbps</option>
+          <option value="128">128 kbps</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <h2>Recortar</h2>
+        <div class="row2">
+          <div><label>Inicio (mm:ss)</label><input type="text" id="trimStart" value="0:00"></div>
+          <div><label>Fin (mm:ss)</label><input type="text" id="trimEnd" value="0:00"></div>
+        </div>
+        <p class="hint" style="text-align:left;">Deja el rango completo para exportar el audio entero.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="previewcol" id="previewcol">
+    <p class="empty">Sube un audio para empezar</p>
+  </div>
+</div>
+
+<div class="bottombar" id="bottombar" style="display:none;">
+  <div class="progress-track" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+  <button class="download" id="downloadBtn">Descargar audio</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentFile = null;
+let durationSec = 0;
+let ffmpeg = null;
+
+/* ---------- upload ---------- */
+$('dropzone').addEventListener('click', ()=> $('fileInput').click());
+$('dropzone').addEventListener('dragover', e=>{ e.preventDefault(); $('dropzone').style.borderColor='var(--accent)'; });
+$('dropzone').addEventListener('dragleave', ()=>{ $('dropzone').style.borderColor='var(--line)'; });
+$('dropzone').addEventListener('drop', e=>{
+  e.preventDefault(); $('dropzone').style.borderColor='var(--line)';
+  if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+$('fileInput').addEventListener('change', e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+function fmtTime(s){
+  s = Math.max(0, Math.round(s));
+  const m = Math.floor(s/60), sec = s%60;
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+function parseTime(str){
+  const parts = str.split(':').map(p=>parseInt(p,10)||0);
+  if(parts.length===2) return parts[0]*60+parts[1];
+  return parts[0]||0;
+}
+function fmtSize(bytes){
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(0)+' KB';
+  return (bytes/1024/1024).toFixed(1)+' MB';
+}
+
+function loadFile(file){
+  currentFile = file;
+  $('uploadSection').querySelector('.dropzone').innerHTML = `<strong>${file.name}</strong><br>Haz clic para cambiar de archivo`;
+  $('editSection').style.display = '';
+  $('bottombar').style.display = '';
+
+  const url = URL.createObjectURL(file);
+  $('previewcol').innerHTML = `
+    <audio id="audioPreview" controls src="${url}"></audio>
+    <div id="waveWrap"><canvas id="waveCanvas"></canvas></div>
+    <p class="hint">Se procesa en tu navegador — el audio nunca se sube a ningún servidor.</p>
+  `;
+
+  const audioEl = $('audioPreview');
+  audioEl.addEventListener('loadedmetadata', ()=>{
+    durationSec = audioEl.duration || 0;
+    $('trimStart').value = '0:00';
+    $('trimEnd').value = fmtTime(durationSec);
+    $('fileInfo').textContent = `${file.name} · ${fmtSize(file.size)} · ${fmtTime(durationSec)}`;
+  });
+
+  drawWaveform(file);
+}
+
+/* ---------- waveform (real peaks, decoded client-side, purely visual) ---------- */
+async function drawWaveform(file){
+  try{
+    const canvas = $('waveCanvas');
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.parentElement.clientWidth, cssH = canvas.parentElement.clientHeight;
+    canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+    const ctx = canvas.getContext('2d');
+
+    const arrayBuf = await file.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuf = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+    const data = audioBuf.getChannelData(0);
+
+    const barCount = Math.floor(cssW/4);
+    const step = Math.floor(data.length/barCount) || 1;
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card');
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--accent');
+    for(let i=0;i<barCount;i++){
+      let peak = 0;
+      const start = i*step;
+      for(let j=0;j<step;j++){
+        const v = Math.abs(data[start+j]||0);
+        if(v>peak) peak = v;
+      }
+      const barH = Math.max(2*dpr, peak*canvas.height*0.9);
+      const x = i*4*dpr;
+      ctx.fillRect(x, (canvas.height-barH)/2, 2*dpr, barH);
+    }
+    audioCtx.close();
+  }catch(e){
+    console.warn('No se pudo dibujar la forma de onda', e);
+  }
+}
+
+/* ---------- format/bitrate visibility ---------- */
+$('outFormat').addEventListener('change', ()=>{
+  const isWav = $('outFormat').value === 'wav';
+  $('bitrateLabel').style.display = isWav ? 'none' : '';
+  $('bitrate').style.display = isWav ? 'none' : '';
+});
+
+/* ---------- ffmpeg ---------- */
+async function getFFmpeg(){
+  if(ffmpeg) return ffmpeg;
+  const { createFFmpeg } = FFmpeg;
+  ffmpeg = createFFmpeg({ log: false });
+  ffmpeg.setProgress(({ ratio })=>{
+    const pct = Math.min(100, Math.max(0, Math.round(ratio*100)));
+    $('progressFill').style.width = pct+'%';
+  });
+  await ffmpeg.load();
+  return ffmpeg;
+}
+
+/* ---------- download ---------- */
+let _downloadsNS=null;
+async function getDownloads(){
+  if(_downloadsNS!==null) return _downloadsNS;
+  try{ if(window.claude && window.claude.use) _downloadsNS = await window.claude.use('downloads'); }
+  catch(e){ _downloadsNS=null; }
+  return _downloadsNS;
+}
+async function saveFile(blob, name){
+  const dl = await getDownloads();
+  if(dl){ try{ await dl.save({filename:name, data:blob}); return; }catch(e){} }
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+const MIME = { mp3:'audio/mpeg', wav:'audio/wav', ogg:'audio/ogg', aac:'audio/mp4' };
+
+$('downloadBtn').addEventListener('click', async ()=>{
+  if(!currentFile) return;
+  const btn = $('downloadBtn');
+  btn.disabled = true;
+  $('progressTrack').classList.add('show');
+  $('progressFill').style.width='0%';
+  btn.textContent = 'Cargando motor…';
+
+  try{
+    const ff = await getFFmpeg();
+    btn.textContent = 'Convirtiendo…';
+
+    const { fetchFile } = FFmpeg;
+    const inName = 'input' + (currentFile.name.match(/\.[a-zA-Z0-9]+$/)?.[0] || '.mp3');
+    const fmt = $('outFormat').value;
+    const outName = 'output.' + (fmt === 'aac' ? 'm4a' : fmt);
+
+    ff.FS('writeFile', inName, await fetchFile(currentFile));
+
+    const args = ['-i', inName];
+
+    const startSec = parseTime($('trimStart').value);
+    const endSec = parseTime($('trimEnd').value);
+    if(endSec > startSec && (startSec > 0 || endSec < durationSec)){
+      args.push('-ss', String(startSec), '-to', String(endSec));
+    }
+
+    args.push('-ar', $('sampleRate').value);
+
+    if(fmt === 'mp3'){ args.push('-c:a','libmp3lame','-b:a', $('bitrate').value+'k'); }
+    else if(fmt === 'aac'){ args.push('-c:a','aac','-b:a', $('bitrate').value+'k'); }
+    else if(fmt === 'ogg'){ args.push('-c:a','libvorbis','-b:a', $('bitrate').value+'k'); }
+    else if(fmt === 'wav'){ args.push('-c:a','pcm_s16le'); }
+
+    args.push(outName);
+
+    await ff.run(...args);
+
+    const data = ff.FS('readFile', outName);
+    const blob = new Blob([data.buffer], { type: MIME[fmt] || 'application/octet-stream' });
+    const base = currentFile.name.replace(/\.[^.]+$/, '');
+    await saveFile(blob, `${base}-editado.${outName.split('.').pop()}`);
+
+    ff.FS('unlink', inName); ff.FS('unlink', outName);
+  }catch(e){
+    console.error(e);
+    alert('No se pudo procesar el audio. Prueba con otro archivo o formato.');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Descargar audio';
+    $('progressTrack').classList.remove('show');
+  }
+});
+
+/* ================= FEEDBACK ================= */
+document.getElementById('fbOpenBtn').addEventListener('click', openFeedbackModal);
+function openFeedbackModal(){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal">
+    <h3>💬 ¿Falta algo o algo no sirve?</h3>
+    <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.82rem;line-height:1.5;">Cuéntame qué herramienta te gustaría ver, o repórtame si algo está fallando.</p>
+    <form action="https://formsubmit.co/musica.wasd@gmail.com" method="POST" target="fbFrame_hidden">
+      <input type="hidden" name="_subject" value="Editor-Audio Feedback">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="email" name="Tu correo (opcional)" placeholder="Tu correo (opcional, por si quieres respuesta)">
+      <textarea name="Mensaje" placeholder="Escribe tu recomendación o problema aquí..." required></textarea>
+      <div class="mrow">
+        <button type="button" class="btn" id="fbCancel">Cancelar</button>
+        <button type="submit" class="btn primary" id="fbSubmit">Enviar</button>
+      </div>
+    </form>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let iframe = document.getElementById('fbFrame_hidden');
+  if(!iframe){
+    iframe = document.createElement('iframe');
+    iframe.name='fbFrame_hidden'; iframe.id='fbFrame_hidden'; iframe.style.display='none';
+    document.body.appendChild(iframe);
+  }
+
+  const form = bg.querySelector('form');
+  bg.querySelector('#fbCancel').onclick = ()=> bg.remove();
+  form.addEventListener('submit', ()=>{
+    const btn = bg.querySelector('#fbSubmit');
+    btn.disabled = true; btn.textContent = 'Enviando…';
+    setTimeout(()=>{
+      bg.innerHTML = `<div class="modal"><h3>¡Gracias! 🙌</h3>
+        <p style="margin:0 0 14px;color:var(--ink-soft);font-size:0.88rem;">Tu comentario fue enviado.</p>
+        <div class="mrow"><button class="btn primary" id="fbClose">Cerrar</button></div></div>`;
+      bg.querySelector('#fbClose').onclick = ()=> bg.remove();
+    }, 900);
+  });
+}
+</script>
+</body>
+</html>
