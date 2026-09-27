@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buscador de Códigos Postales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 0 0 6px; }
+  .row { display: flex; gap: 10px; }
+  input {
+    flex: 1; padding: 9px 12px; font-family: inherit; font-size: 17px; letter-spacing: 1px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 0 22px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer;
+  }
+  .estado-msg { display: none; font-size: 14px; color: var(--ink-soft); margin-top: 14px; }
+  .resultado { display: none; }
+  .cp-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin-bottom: 14px;
+  }
+  .cp-card .cp-num {
+    font-family: "Source Serif 4", Georgia, serif; font-size: 22px; font-weight: 700; color: var(--accent);
+  }
+  .cp-card .cp-lugar { color: var(--ink-soft); font-size: 14px; margin-top: 2px; }
+  .cp-card .colonias { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .cp-card .colonias-titulo { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px;
+    padding: 4px 12px; font-size: 13px;
+  }
+  .lista-cps { display: flex; flex-direction: column; gap: 8px; }
+  .lista-cps a {
+    display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+  }
+  .lista-cps a:hover { border-color: var(--accent); }
+  .lista-cps .cp-mini { font-family: "Source Serif 4", Georgia, serif; font-weight: 700; }
+  .lista-cps .lugar-mini { color: var(--ink-soft); font-size: 13px; }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Buscador de Códigos Postales</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Buscador de Códigos Postales</h1>
+    <p class="sub">Escribí un código postal (o los primeros dígitos) y mirá a qué estado, municipio y colonias corresponde.</p>
+
+    <div class="disclaimer">
+      <strong>Antes de confiar en el resultado:</strong>
+      <ul>
+        <li>Los datos vienen del catálogo público de Correos de México, cargado directamente en esta página — <strong>no se conecta a internet</strong> para buscar, así que funciona sin importar si el servicio del SAT o de Correos está caído.</li>
+        <li>El catálogo se actualiza de vez en cuando; si un código postal es <strong>muy nuevo</strong> (de un fraccionamiento reciente, por ejemplo) puede que todavía no aparezca aquí.</li>
+        <li>Si necesitás el dato 100% oficial y actualizado (por ejemplo para un trámite), verificalo en el <a href="https://www.correosdemexico.gob.mx/SSLServicios/ConsultaCP/Descarga.aspx" target="_blank" rel="noopener">sitio de Correos de México</a>.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <label>Código postal (mínimo 2 dígitos)</label>
+      <div class="row">
+        <input id="cpInput" type="text" inputmode="numeric" maxlength="5" placeholder="ej. 44100" autocomplete="off">
+        <button class="primary" onclick="buscar()">Buscar</button>
+      </div>
+      <p class="estado-msg" id="estadoMsg"></p>
+    </div>
+
+    <div class="resultado" id="resultado"></div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">¿No aparece tu colonia? Puede que el código postal sea muy nuevo — probá con Correos de México directamente.</p>
+  </div>
+</main>
+<script>
+const cache = {};
+const inputEl = document.getElementById('cpInput');
+const estadoMsg = document.getElementById('estadoMsg');
+const resultadoEl = document.getElementById('resultado');
+const notaFinal = document.getElementById('notaFinal');
+
+inputEl.addEventListener('input', () => {
+  inputEl.value = inputEl.value.replace(/\D/g, '').slice(0, 5);
+});
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') buscar();
+});
+
+async function cargarShard(prefix) {
+  if (cache[prefix]) return cache[prefix];
+  const resp = await fetch(`cp-data/${prefix}.json`);
+  if (!resp.ok) throw new Error('no disponible');
+  const data = await resp.json();
+  cache[prefix] = data;
+  return data;
+}
+
+function mostrarMensaje(msg) {
+  estadoMsg.textContent = msg;
+  estadoMsg.style.display = 'block';
+}
+
+function renderResultadoUnico(cp, info) {
+  resultadoEl.innerHTML = `
+    <div class="cp-card">
+      <div class="cp-num">${cp}</div>
+      <div class="cp-lugar">${info.municipio}${info.ciudad ? ' · ' + info.ciudad : ''} · ${info.estado}</div>
+      <div class="colonias">
+        <div class="colonias-titulo">Colonias / asentamientos</div>
+        <div class="chip-list">
+          ${info.colonias.map(c => `<span class="chip">${c}</span>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderListaCoincidencias(query, coincidencias) {
+  const maxMostrar = 60;
+  const items = coincidencias.slice(0, maxMostrar).map(([cp, info]) => `
+    <a href="#" onclick="event.preventDefault(); inputEl.value='${cp}'; buscar();">
+      <span class="cp-mini">${cp}</span>
+      <span class="lugar-mini">${info.municipio}, ${info.estado}</span>
+    </a>`).join('');
+  const extra = coincidencias.length > maxMostrar
+    ? `<p class="nota-pequena">Mostrando ${maxMostrar} de ${coincidencias.length} resultados — escribí más dígitos para acotar la búsqueda.</p>` : '';
+  resultadoEl.innerHTML = `<div class="lista-cps">${items}</div>${extra}`;
+}
+
+async function buscar() {
+  const query = inputEl.value.trim();
+  estadoMsg.style.display = 'none';
+  resultadoEl.style.display = 'none';
+  notaFinal.style.display = 'none';
+
+  if (query.length < 2) {
+    mostrarMensaje('Escribí al menos 2 dígitos para buscar.');
+    return;
+  }
+
+  const prefix = query.slice(0, 2);
+  mostrarMensaje('Buscando…');
+
+  let data;
+  try {
+    data = await cargarShard(prefix);
+  } catch (e) {
+    mostrarMensaje('No se pudo cargar la base de datos para ese rango. Revisá tu conexión e intentá de nuevo.');
+    return;
+  }
+
+  estadoMsg.style.display = 'none';
+
+  if (query.length === 5 && data[query]) {
+    renderResultadoUnico(query, data[query]);
+    resultadoEl.style.display = 'block';
+    notaFinal.style.display = 'block';
+    return;
+  }
+
+  const coincidencias = Object.entries(data)
+    .filter(([cp]) => cp.startsWith(query))
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (coincidencias.length === 0) {
+    mostrarMensaje('No encontramos ningún código postal que empiece así.');
+    return;
+  }
+
+  if (coincidencias.length === 1) {
+    const [cp, info] = coincidencias[0];
+    renderResultadoUnico(cp, info);
+  } else {
+    renderListaCoincidencias(query, coincidencias);
+  }
+  resultadoEl.style.display = 'block';
+  notaFinal.style.display = 'block';
+}
+</script>
+</body>
+</html>

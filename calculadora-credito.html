@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Crédito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 160px; }
+  .checkrow { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; font-size: 13.5px; color: var(--ink-soft); }
+  .checkrow input { width: auto; margin-top: 3px; }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .linea {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  .linea:last-of-type { border-bottom: none; }
+  .linea .etiqueta { color: var(--ink-soft); }
+  .linea .monto { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; }
+  .total {
+    display: flex; justify-content: space-between; margin-top: 8px; padding-top: 14px;
+    border-top: 2px solid var(--accent); font-size: 20px;
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 700; color: var(--accent);
+  }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Calculadora de Crédito</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Calculadora de Crédito</h1>
+    <p class="sub">Estimá tu pago mensual y el total de intereses de un préstamo a pagos fijos. No se guarda ningún dato.</p>
+
+    <div class="disclaimer">
+      <strong>Qué SÍ y qué NO calcula esto:</strong>
+      <ul>
+        <li>Usa el sistema de <strong>pagos fijos mensuales</strong> (el más común en créditos personales, de auto e hipotecarios de tasa fija).</li>
+        <li><strong>No incluye</strong> comisión por apertura, seguros obligatorios, ni otros cargos — todo eso sí se refleja en el <strong>CAT (Costo Anual Total)</strong>, que por ley el banco o financiera tiene que mostrarte y que siempre te va a dar un costo real más alto que esta calculadora.</li>
+        <li>Muchos créditos personales y de tarjetas en México cobran <strong>IVA (16%) sobre los intereses</strong> de cada pago (no sobre el capital) — activá la casilla si el tuyo lo indica en tu contrato.</li>
+        <li>Esto es una <strong>estimación</strong>, no la tabla de amortización oficial de tu contrato ni asesoría financiera.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <label>Monto del préstamo</label>
+      <input id="monto" type="number" placeholder="ej. 50000" inputmode="decimal">
+
+      <div class="row">
+        <div>
+          <label>Tasa de interés anual (%)</label>
+          <input id="tasaAnual" type="number" placeholder="ej. 24" inputmode="decimal">
+        </div>
+        <div>
+          <label>Plazo (meses)</label>
+          <input id="plazoMeses" type="number" placeholder="ej. 24" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="checkrow">
+        <input type="checkbox" id="conIva">
+        <label style="margin:0;color:inherit" for="conIva">Mi crédito cobra IVA (16%) sobre los intereses de cada pago</label>
+      </div>
+
+      <button class="primary" onclick="calcular()">Calcular</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="linea"><span class="etiqueta">Pago mensual estimado</span><span class="monto" id="pagoTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">Total de intereses</span><span class="monto" id="interesesTxt">—</span></div>
+      <div class="linea" id="lineaIva" style="display:none"><span class="etiqueta">Total de IVA sobre intereses</span><span class="monto" id="ivaTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">Capital</span><span class="monto" id="capitalTxt">—</span></div>
+      <div class="total"><span>Total a pagar</span><span id="totalTxt">—</span></div>
+    </div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">Compará siempre contra el CAT que te informe la institución — es el dato que por ley refleja el costo real y total del crédito.</p>
+  </div>
+</main>
+<script>
+function fmtMoneda(n) {
+  return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Encuentra el pago mensual fijo tal que, tras "n" meses, el saldo llega a cero,
+// aplicando IVA sobre el interés de cada mes si corresponde. Se resuelve por bisección
+// porque el IVA sobre interés rompe la fórmula cerrada del sistema francés clásico.
+function calcularPagoFijo(monto, imMensual, n, conIva) {
+  function saldoFinal(pago) {
+    let saldo = monto;
+    for (let i = 0; i < n; i++) {
+      const interes = saldo * imMensual;
+      const ivaInteres = conIva ? interes * 0.16 : 0;
+      const cargoTotal = interes + ivaInteres;
+      const capitalPagado = pago - cargoTotal;
+      saldo = saldo - capitalPagado;
+    }
+    return saldo;
+  }
+
+  let bajo = 0;
+  let alto = monto * 2 + monto * imMensual * n * 2 + 1;
+  for (let iter = 0; iter < 80; iter++) {
+    const medio = (bajo + alto) / 2;
+    if (saldoFinal(medio) > 0) {
+      bajo = medio;
+    } else {
+      alto = medio;
+    }
+  }
+  return (bajo + alto) / 2;
+}
+
+function calcular() {
+  const monto = parseFloat(document.getElementById('monto').value);
+  const tasaAnual = parseFloat(document.getElementById('tasaAnual').value);
+  const n = parseInt(document.getElementById('plazoMeses').value);
+  const conIva = document.getElementById('conIva').checked;
+
+  if (!monto || monto <= 0 || !tasaAnual || tasaAnual < 0 || !n || n <= 0) {
+    alert('Completá el monto, la tasa anual y el plazo en meses con valores válidos.');
+    return;
+  }
+
+  const imMensual = (tasaAnual / 100) / 12;
+  const pago = calcularPagoFijo(monto, imMensual, n, conIva);
+  const totalPagado = pago * n;
+
+  // Recorremos la amortización con el pago encontrado para separar intereses, IVA y capital reales.
+  let saldo = monto;
+  let interesesAcum = 0;
+  let ivaAcum = 0;
+  for (let i = 0; i < n; i++) {
+    const interes = saldo * imMensual;
+    const ivaInteres = conIva ? interes * 0.16 : 0;
+    interesesAcum += interes;
+    ivaAcum += ivaInteres;
+    const capitalPagado = pago - interes - ivaInteres;
+    saldo -= capitalPagado;
+  }
+
+  document.getElementById('pagoTxt').textContent = fmtMoneda(pago);
+  document.getElementById('interesesTxt').textContent = fmtMoneda(interesesAcum);
+  document.getElementById('capitalTxt').textContent = fmtMoneda(monto);
+  document.getElementById('totalTxt').textContent = fmtMoneda(totalPagado);
+
+  const lineaIva = document.getElementById('lineaIva');
+  if (conIva) {
+    document.getElementById('ivaTxt').textContent = fmtMoneda(ivaAcum);
+    lineaIva.style.display = 'flex';
+  } else {
+    lineaIva.style.display = 'none';
+  }
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('notaFinal').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

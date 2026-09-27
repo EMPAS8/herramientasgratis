@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de Enlaces para WhatsApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input, textarea, select {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  .row { display: flex; gap: 12px; }
+  .row > div:first-child { flex: 0 0 110px; }
+  .row > div:last-child { flex: 1; }
+  .nota-campo { font-size: 12px; color: var(--ink-soft); margin-top: 5px; }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .enlace-box {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; font-size: 14px; word-break: break-all; margin-bottom: 12px;
+  }
+  .botones { display: flex; gap: 10px; flex-wrap: wrap; }
+  button.secundario, a.secundario {
+    background: var(--card); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 16px; font-family: inherit; font-size: 14px;
+    font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  button.secundario:hover, a.secundario:hover { border-color: var(--accent); }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Enlaces para WhatsApp</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Generador de Enlaces para WhatsApp</h1>
+    <p class="sub">Creá un enlace que abre un chat de WhatsApp con un mensaje ya escrito. No se guarda ningún dato.</p>
+
+    <div class="disclaimer">
+      <strong>Cosas a tener en cuenta:</strong>
+      <ul>
+        <li>El enlace <strong>abre el chat con el mensaje precargado</strong>, pero es la persona quien tiene que presionar enviar — no manda el mensaje automáticamente.</li>
+        <li>Necesitás el número <strong>con código de país, sin espacios ni signos +</strong>. Para México, desde julio de 2021 <strong>ya no se agrega el "1" extra</strong> después del 52 en los celulares — solo 52 + los 10 dígitos.</li>
+        <li>Esta herramienta <strong>no verifica</strong> si el número existe o si tiene WhatsApp activo.</li>
+        <li>Si el enlace lo vas a usar en un sitio web o red social, cualquier persona que lo vea va a poder escribirte a ese número — no incluyas datos sensibles en el mensaje predeterminado.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Código de país</label>
+          <input id="codigoPais" type="text" value="52" inputmode="numeric" maxlength="4">
+        </div>
+        <div>
+          <label>Número de teléfono</label>
+          <input id="numero" type="text" placeholder="ej. 3312345678" inputmode="numeric">
+        </div>
+      </div>
+      <p class="nota-campo">México: 52 + 10 dígitos, sin el "1" extra. Ej: 52 3312345678</p>
+
+      <label>Mensaje (opcional)</label>
+      <textarea id="mensaje" placeholder="Hola, quisiera más información sobre..."></textarea>
+
+      <button class="primary" onclick="generar()">Generar enlace</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="enlace-box" id="enlaceTxt"></div>
+      <div class="botones">
+        <button class="secundario" onclick="copiar()">📋 Copiar enlace</button>
+        <a class="secundario" id="abrirLink" href="#" target="_blank" rel="noopener">↗ Abrir en WhatsApp</a>
+      </div>
+      <p class="nota-pequena" id="copiadoMsg" style="display:none">¡Enlace copiado!</p>
+    </div>
+  </div>
+</main>
+<script>
+let enlaceActual = '';
+
+function generar() {
+  const codigo = document.getElementById('codigoPais').value.replace(/\D/g, '');
+  const numero = document.getElementById('numero').value.replace(/\D/g, '');
+  const mensaje = document.getElementById('mensaje').value;
+
+  if (!codigo || !numero) {
+    alert('Completá el código de país y el número de teléfono.');
+    return;
+  }
+
+  const numeroCompleto = codigo + numero;
+  const url = new URL('https://wa.me/' + numeroCompleto);
+  if (mensaje.trim()) {
+    url.searchParams.set('text', mensaje);
+  }
+  enlaceActual = url.toString();
+
+  document.getElementById('enlaceTxt').textContent = enlaceActual;
+  document.getElementById('abrirLink').href = enlaceActual;
+  document.getElementById('copiadoMsg').style.display = 'none';
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function copiar() {
+  if (!enlaceActual) return;
+  navigator.clipboard.writeText(enlaceActual).then(() => {
+    document.getElementById('copiadoMsg').style.display = 'block';
+  }).catch(() => {
+    alert('No se pudo copiar automáticamente. Seleccioná y copiá el enlace manualmente.');
+  });
+}
+</script>
+</body>
+</html>

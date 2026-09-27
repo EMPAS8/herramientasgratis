@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compresor de Imágenes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 5px; }
+  label:first-child { margin-top: 0; }
+  select, input[type="number"] {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  .dropzone {
+    border: 2px dashed var(--line); border-radius: 14px; padding: 34px 20px;
+    text-align: center; cursor: pointer; color: var(--ink-soft); font-size: 14.5px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .dropzone.hover, .dropzone:hover { border-color: var(--accent); color: var(--accent); }
+  .dropzone strong { color: var(--ink); }
+  #fileInput { display: none; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 160px; }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type="range"] { flex: 1; }
+  .slider-val { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; min-width: 44px; text-align: right; }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secundario {
+    background: var(--paper); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 14px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .comparacion { display: flex; gap: 16px; flex-wrap: wrap; }
+  .comparacion .col { flex: 1; min-width: 220px; text-align: center; }
+  .comparacion img { max-width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+  .comparacion .meta { margin-top: 8px; font-size: 13.5px; color: var(--ink-soft); }
+  .comparacion .meta strong { color: var(--ink); font-family: "Source Serif 4", Georgia, serif; }
+  .ahorro {
+    text-align: center; margin-top: 18px; padding-top: 16px; border-top: 2px solid var(--accent);
+    font-family: "Source Serif 4", Georgia, serif; font-size: 19px; font-weight: 700; color: var(--accent);
+  }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+  #previewNombre { font-size: 13.5px; color: var(--ink-soft); margin-top: 10px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Compresor de Imágenes</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Compresor de Imágenes</h1>
+    <p class="sub">Reducí el peso de tus fotos antes de subirlas a algún lado. Todo pasa en tu navegador.</p>
+
+    <div class="disclaimer">
+      <strong>Cómo funciona y sus límites:</strong>
+      <ul>
+        <li>La compresión ocurre <strong>en tu propio navegador</strong>: la imagen nunca se sube a ningún servidor.</li>
+        <li>Con <strong>JPG y WEBP</strong> podés bajar la calidad para reducir bastante el peso. <strong>PNG</strong> es un formato sin pérdida: la calidad no aplica igual, así que para fotos normalmente conviene convertir a JPG o WEBP.</li>
+        <li>Si la imagen tiene <strong>transparencia</strong> (por ejemplo un logo con fondo transparente), convertirla a JPG la va a rellenar con fondo blanco — usá WEBP o dejala en PNG si necesitás mantener la transparencia.</li>
+        <li>Achicar las dimensiones (ancho/alto) reduce el peso mucho más que solo bajar la calidad, sobre todo en fotos grandes.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <div>📷 Arrastrá una imagen aquí, o <strong>tocá para elegir un archivo</strong></div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+      <div id="previewNombre"></div>
+
+      <label>Formato de salida</label>
+      <select id="formato">
+        <option value="image/jpeg">JPG</option>
+        <option value="image/webp">WEBP</option>
+        <option value="image/png">PNG (sin pérdida)</option>
+      </select>
+
+      <label>Calidad</label>
+      <div class="slider-row">
+        <input type="range" id="calidad" min="10" max="100" value="75">
+        <span class="slider-val" id="calidadVal">75%</span>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Ancho máximo (px, opcional)</label>
+          <input type="number" id="anchoMax" placeholder="ej. 1600" inputmode="numeric">
+        </div>
+        <div>
+          <label>Alto máximo (px, opcional)</label>
+          <input type="number" id="altoMax" placeholder="ej. 1600" inputmode="numeric">
+        </div>
+      </div>
+
+      <button class="primary" id="btnComprimir" onclick="comprimir()" disabled>Comprimir</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="comparacion">
+        <div class="col">
+          <div class="meta">Original</div>
+          <img id="imgOriginal" alt="Imagen original">
+          <div class="meta"><strong id="pesoOriginal">—</strong></div>
+        </div>
+        <div class="col">
+          <div class="meta">Comprimida</div>
+          <img id="imgComprimida" alt="Imagen comprimida">
+          <div class="meta"><strong id="pesoComprimido">—</strong></div>
+        </div>
+      </div>
+      <div class="ahorro" id="ahorroTxt">—</div>
+      <div style="text-align:center">
+        <a id="descargarLink" download="imagen-comprimida.jpg">
+          <button class="secundario">⬇ Descargar imagen comprimida</button>
+        </a>
+      </div>
+    </div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">Si el resultado se ve muy pixelado, subí un poco la calidad o probá con WEBP, que suele lograr mejor calidad al mismo peso.</p>
+  </div>
+</main>
+<script>
+let archivoOriginal = null;
+let imagenBitmap = null;
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const btnComprimir = document.getElementById('btnComprimir');
+const calidadInput = document.getElementById('calidad');
+const calidadVal = document.getElementById('calidadVal');
+const formatoSelect = document.getElementById('formato');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('hover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('hover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('hover');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) manejarArchivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) manejarArchivo(fileInput.files[0]);
+});
+
+calidadInput.addEventListener('input', () => {
+  calidadVal.textContent = calidadInput.value + '%';
+});
+
+function actualizarVisibilidadCalidad() {
+  const esPng = formatoSelect.value === 'image/png';
+  calidadInput.disabled = esPng;
+  document.querySelector('.slider-row').style.opacity = esPng ? 0.45 : 1;
+}
+formatoSelect.addEventListener('change', actualizarVisibilidadCalidad);
+actualizarVisibilidadCalidad();
+
+async function manejarArchivo(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('Elegí un archivo de imagen (JPG, PNG, WEBP, etc).');
+    return;
+  }
+  archivoOriginal = file;
+  document.getElementById('previewNombre').textContent = `${file.name} — ${fmtBytes(file.size)}`;
+  btnComprimir.disabled = false;
+  document.getElementById('resultado').style.display = 'none';
+  document.getElementById('notaFinal').style.display = 'none';
+}
+
+function fmtBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function cargarImagen(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function comprimir() {
+  if (!archivoOriginal) return;
+  btnComprimir.disabled = true;
+  btnComprimir.textContent = 'Comprimiendo…';
+
+  try {
+    const img = await cargarImagen(archivoOriginal);
+
+    let ancho = img.naturalWidth;
+    let alto = img.naturalHeight;
+    const anchoMax = parseInt(document.getElementById('anchoMax').value) || null;
+    const altoMax = parseInt(document.getElementById('altoMax').value) || null;
+
+    if (anchoMax && ancho > anchoMax) {
+      alto = Math.round(alto * (anchoMax / ancho));
+      ancho = anchoMax;
+    }
+    if (altoMax && alto > altoMax) {
+      ancho = Math.round(ancho * (altoMax / alto));
+      alto = altoMax;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = ancho;
+    canvas.height = alto;
+    const ctx = canvas.getContext('2d');
+    if (formatoSelect.value === 'image/jpeg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, ancho, alto);
+    }
+    ctx.drawImage(img, 0, 0, ancho, alto);
+
+    const formato = formatoSelect.value;
+    const calidad = formato === 'image/png' ? undefined : parseInt(calidadInput.value) / 100;
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, formato, calidad));
+
+    const urlOriginal = URL.createObjectURL(archivoOriginal);
+    const urlComprimida = URL.createObjectURL(blob);
+
+    document.getElementById('imgOriginal').src = urlOriginal;
+    document.getElementById('imgComprimida').src = urlComprimida;
+    document.getElementById('pesoOriginal').textContent = fmtBytes(archivoOriginal.size);
+    document.getElementById('pesoComprimido').textContent = fmtBytes(blob.size);
+
+    const ahorro = 100 - (blob.size / archivoOriginal.size * 100);
+    const ahorroEl = document.getElementById('ahorroTxt');
+    if (ahorro > 0) {
+      ahorroEl.textContent = `${ahorro.toFixed(0)}% más liviana`;
+    } else {
+      ahorroEl.textContent = 'No se logró reducir el peso con esta configuración';
+    }
+
+    const ext = formato === 'image/jpeg' ? 'jpg' : formato === 'image/webp' ? 'webp' : 'png';
+    const link = document.getElementById('descargarLink');
+    link.href = urlComprimida;
+    link.download = `imagen-comprimida.${ext}`;
+
+    document.getElementById('resultado').style.display = 'block';
+    document.getElementById('notaFinal').style.display = 'block';
+    document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    alert('No se pudo procesar la imagen. Probá con otro archivo.');
+  } finally {
+    btnComprimir.disabled = false;
+    btnComprimir.textContent = 'Comprimir';
+  }
+}
+</script>
+</body>
+</html>

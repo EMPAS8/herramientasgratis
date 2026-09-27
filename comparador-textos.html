@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comparador de Textos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    --add-bg: #CFE8CC; --add-ink: #1E5C22;
+    --del-bg: #F2C9C2; --del-ink: #7A241A;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+      --add-bg: #24402A; --add-ink: #9BE39E;
+      --del-bg: #402625; --del-ink: #E39B93;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+    --add-bg: #24402A; --add-ink: #9BE39E;
+    --del-bg: #402625; --del-ink: #E39B93;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 0 0 6px; }
+  .cols { display: flex; gap: 16px; flex-wrap: wrap; }
+  .col { flex: 1; min-width: 260px; }
+  textarea {
+    width: 100%; min-height: 220px; resize: vertical;
+    font-family: inherit; font-size: 14.5px; line-height: 1.5;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .resumen {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  .resumen span.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  .dot.add { background: var(--add-bg); border: 1px solid var(--add-ink); }
+  .dot.del { background: var(--del-bg); border: 1px solid var(--del-ink); }
+  .salida {
+    white-space: pre-wrap; word-wrap: break-word; font-size: 14.5px; line-height: 1.7;
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--paper);
+  }
+  .salida mark.add { background: var(--add-bg); color: var(--add-ink); border-radius: 3px; padding: 0 1px; text-decoration: none; }
+  .salida mark.del { background: var(--del-bg); color: var(--del-ink); border-radius: 3px; padding: 0 1px; text-decoration: line-through; }
+  .salida-titulo { font-size: 13px; color: var(--ink-soft); margin: 0 0 6px; font-weight: 600; }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Comparador de Textos</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Comparador de Textos</h1>
+    <p class="sub">Pegá dos textos y mirá qué palabras cambiaron entre uno y otro. Todo pasa en tu navegador.</p>
+
+    <div class="disclaimer">
+      <strong>Cómo funciona y sus límites:</strong>
+      <ul>
+        <li>Compara <strong>palabra por palabra</strong>, no el significado. Un sinónimo o una frase reordenada aparecerá como un cambio, aunque diga casi lo mismo.</li>
+        <li>Es sensible a mayúsculas, tildes, puntuación y espacios: cambiar "Que" por "que" también se marca como diferencia.</li>
+        <li>Con textos muy largos (varios miles de palabras) la comparación puede tardar o no completarse — funciona mejor con párrafos o documentos de tamaño moderado.</li>
+        <li><strong>No se envía ni se guarda</strong> ningún texto: la comparación se calcula en tu propio navegador.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="cols">
+        <div class="col">
+          <label>Texto A (original)</label>
+          <textarea id="textoA" placeholder="Pegá aquí el primer texto..."></textarea>
+        </div>
+        <div class="col">
+          <label>Texto B (nuevo)</label>
+          <textarea id="textoB" placeholder="Pegá aquí el segundo texto..."></textarea>
+        </div>
+      </div>
+      <button class="primary" onclick="comparar()">Comparar</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="resumen" id="resumenTxt"></div>
+
+      <p class="salida-titulo">Texto A — lo eliminado se ve tachado</p>
+      <div class="salida" id="salidaA"></div>
+
+      <p class="salida-titulo" style="margin-top:16px">Texto B — lo agregado se ve resaltado</p>
+      <div class="salida" id="salidaB"></div>
+    </div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">Recordá: esto marca diferencias de palabras, no evalúa si el significado cambió.</p>
+  </div>
+</main>
+<script>
+const LIMITE_TOKENS = 4000;
+
+function tokenizar(texto) {
+  // Separa en palabras y espacios/puntuación, conservando todo para reconstruir el texto tal cual.
+  return texto.match(/\s+|[^\s]+/g) || [];
+}
+
+function diffTokens(a, b) {
+  const n = a.length, m = b.length;
+  // Tabla LCS (longest common subsequence) para encontrar las partes iguales.
+  const dp = new Array(n + 1);
+  for (let i = 0; i <= n; i++) dp[i] = new Uint16Array(m + 1);
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const resultado = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) {
+      resultado.push({ type: 'equal', text: a[i] });
+      i++; j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      resultado.push({ type: 'del', text: a[i] });
+      i++;
+    } else {
+      resultado.push({ type: 'add', text: b[j] });
+      j++;
+    }
+  }
+  while (i < n) { resultado.push({ type: 'del', text: a[i] }); i++; }
+  while (j < m) { resultado.push({ type: 'add', text: b[j] }); j++; }
+  return resultado;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function comparar() {
+  const textoA = document.getElementById('textoA').value;
+  const textoB = document.getElementById('textoB').value;
+
+  if (!textoA.trim() && !textoB.trim()) {
+    alert('Pegá al menos un texto en alguno de los dos campos.');
+    return;
+  }
+
+  const tokensA = tokenizar(textoA);
+  const tokensB = tokenizar(textoB);
+
+  if (tokensA.length > LIMITE_TOKENS || tokensB.length > LIMITE_TOKENS) {
+    alert('Los textos son demasiado largos para comparar en el navegador. Probá con fragmentos más cortos.');
+    return;
+  }
+
+  const diff = diffTokens(tokensA, tokensB);
+
+  let htmlA = '', htmlB = '';
+  let agregadas = 0, eliminadas = 0;
+
+  diff.forEach(d => {
+    const texto = escapeHtml(d.text);
+    if (d.type === 'equal') {
+      htmlA += texto;
+      htmlB += texto;
+    } else if (d.type === 'del') {
+      if (d.text.trim()) eliminadas++;
+      htmlA += `<mark class="del">${texto}</mark>`;
+    } else {
+      if (d.text.trim()) agregadas++;
+      htmlB += `<mark class="add">${texto}</mark>`;
+    }
+  });
+
+  document.getElementById('salidaA').innerHTML = htmlA || '<em>(vacío)</em>';
+  document.getElementById('salidaB').innerHTML = htmlB || '<em>(vacío)</em>';
+  document.getElementById('resumenTxt').innerHTML =
+    `<span><span class="dot add"></span>${agregadas} palabra${agregadas === 1 ? '' : 's'} agregada${agregadas === 1 ? '' : 's'}</span>` +
+    `<span><span class="dot del"></span>${eliminadas} palabra${eliminadas === 1 ? '' : 's'} eliminada${eliminadas === 1 ? '' : 's'}</span>`;
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('notaFinal').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
