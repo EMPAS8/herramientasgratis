@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de ISR y Sueldo Neto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .linea {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  .linea:last-of-type { border-bottom: none; }
+  .linea .etiqueta { color: var(--ink-soft); }
+  .linea .monto { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; }
+  .total {
+    display: flex; justify-content: space-between; margin-top: 8px; padding-top: 14px;
+    border-top: 2px solid var(--accent); font-size: 20px;
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 700; color: var(--accent);
+  }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+  .vigencia { font-size: 12px; color: var(--ink-soft); text-align: right; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">ISR y Sueldo Neto</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Calculadora de ISR y Sueldo Neto</h1>
+    <p class="sub">Estimación de la retención mensual de ISR sobre sueldos y salarios. No se guarda ningún dato.</p>
+
+    <div class="disclaimer">
+      <strong>Qué SÍ y qué NO calcula esto:</strong>
+      <ul>
+        <li>Calcula <strong>solo el ISR</strong> (Art. 96 LISR) con el subsidio para el empleo aplicable, sobre un sueldo mensual fijo.</li>
+        <li><strong>No incluye</strong> descuentos de IMSS, INFONAVIT, pensión alimenticia ni otros descuentos de nómina — tu neto real en el recibo será menor a lo que muestra esta calculadora.</li>
+        <li><strong>No aplica</strong> si tu ingreso incluye comisiones, bonos, horas extra, o si estás calculando aguinaldo/PTU (esos tienen reglas fiscales distintas, con exenciones parciales).</li>
+        <li>Las tablas de ISR y el subsidio al empleo <strong>cambian cada año</strong> — este cálculo usa las tablas vigentes de <strong>febrero a diciembre de 2026</strong> (enero 2026 usó una tasa de transición ligeramente distinta, no incluida aquí).</li>
+        <li>Esto es una <strong>estimación</strong>, no un recibo de nómina ni asesoría fiscal.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="vigencia">Tablas vigentes: SAT, tarifa mensual 2026 (feb–dic)</div>
+      <label>Sueldo mensual bruto</label>
+      <input id="sueldoBruto" type="number" placeholder="ej. 15000" inputmode="decimal">
+      <button class="primary" onclick="calcular()">Calcular</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="linea"><span class="etiqueta">Sueldo bruto mensual</span><span class="monto" id="brutoTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">ISR según tarifa (antes de subsidio)</span><span class="monto" id="isrBaseTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">Subsidio para el empleo</span><span class="monto" id="subsidioTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">ISR a retener</span><span class="monto" id="isrFinalTxt">—</span></div>
+      <div class="total"><span>Sueldo neto (solo después de ISR)</span><span id="netoTxt">—</span></div>
+    </div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">Recordá: tu recibo de nómina real también descuenta IMSS y, si aplica, INFONAVIT — tu depósito real será menor a este número.</p>
+  </div>
+</main>
+<script>
+// Tarifa mensual ISR 2026 (Art. 96 LISR)
+const tablaISR = [
+  { limInf: 0.01,      limSup: 844.59,      cuota: 0.00,      tasa: 0.0192 },
+  { limInf: 844.60,    limSup: 7168.51,     cuota: 16.22,     tasa: 0.0640 },
+  { limInf: 7168.52,   limSup: 12598.02,    cuota: 420.95,    tasa: 0.1088 },
+  { limInf: 12598.03,  limSup: 14644.64,    cuota: 1011.68,   tasa: 0.1600 },
+  { limInf: 14644.65,  limSup: 17533.64,    cuota: 1339.14,   tasa: 0.1792 },
+  { limInf: 17533.65,  limSup: 35362.83,    cuota: 1856.84,   tasa: 0.2136 },
+  { limInf: 35362.84,  limSup: 55736.68,    cuota: 5665.16,   tasa: 0.2352 },
+  { limInf: 55736.69,  limSup: 106410.50,   cuota: 10457.09,  tasa: 0.3000 },
+  { limInf: 106410.51, limSup: 141880.66,   cuota: 25659.23,  tasa: 0.3200 },
+  { limInf: 141880.67, limSup: 425641.99,   cuota: 37009.69,  tasa: 0.3400 },
+  { limInf: 425642.00, limSup: Infinity,    cuota: 133488.54, tasa: 0.3500 }
+];
+
+function calcularISR(bruto) {
+  const renglon = tablaISR.find(r => bruto >= r.limInf && bruto <= r.limSup) || tablaISR[tablaISR.length - 1];
+  const excedente = bruto - renglon.limInf;
+  return renglon.cuota + excedente * renglon.tasa;
+}
+
+// Subsidio para el empleo 2026 (feb-dic): $535.65 fijo hasta $7,382.33, disminuye hasta $0 en $11,492.66
+function calcularSubsidio(bruto) {
+  const SUBSIDIO_MAX = 535.65;
+  const TOPE_COMPLETO = 7382.33;
+  const TOPE_CERO = 11492.66;
+  if (bruto <= TOPE_COMPLETO) return SUBSIDIO_MAX;
+  if (bruto >= TOPE_CERO) return 0;
+  const subsidio = SUBSIDIO_MAX - 0.5 * (bruto - TOPE_COMPLETO);
+  return Math.max(subsidio, 0);
+}
+
+function fmtMoneda(n) {
+  return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function calcular() {
+  const bruto = parseFloat(document.getElementById('sueldoBruto').value);
+  if (!bruto || bruto <= 0) {
+    alert('Ingresá un sueldo mensual válido.');
+    return;
+  }
+
+  const isrBase = calcularISR(bruto);
+  const subsidio = calcularSubsidio(bruto);
+  const isrFinal = Math.max(isrBase - subsidio, 0);
+  const neto = bruto - isrFinal;
+
+  document.getElementById('brutoTxt').textContent = fmtMoneda(bruto);
+  document.getElementById('isrBaseTxt').textContent = fmtMoneda(isrBase);
+  document.getElementById('subsidioTxt').textContent = '-' + fmtMoneda(subsidio);
+  document.getElementById('isrFinalTxt').textContent = fmtMoneda(isrFinal);
+  document.getElementById('netoTxt').textContent = fmtMoneda(neto);
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('notaFinal').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

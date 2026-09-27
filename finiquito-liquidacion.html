@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Finiquito y Liquidación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 18px; }
+  .disclaimer {
+    background: var(--paper-2); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.55; margin-bottom: 22px; color: var(--ink);
+  }
+  .disclaimer strong { color: var(--accent); }
+  .disclaimer ul { margin: 8px 0 0; padding-left: 20px; }
+  .disclaimer li { margin-bottom: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+  label { display: block; font-size: 13.5px; color: var(--ink-soft); margin: 12px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 9px 12px; font-family: inherit; font-size: 15px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 180px; }
+  .checkrow { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; font-size: 13.5px; color: var(--ink-soft); }
+  .checkrow input { width: auto; margin-top: 3px; }
+  button.primary {
+    background: var(--accent); color: var(--accent-ink); border: none;
+    border-radius: 10px; padding: 11px 20px; font-family: inherit; font-size: 15px;
+    font-weight: 600; cursor: pointer; margin-top: 16px;
+  }
+  .resultado { display: none; }
+  .seccion-titulo {
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 16px;
+    color: var(--accent); margin: 18px 0 6px;
+  }
+  .seccion-titulo:first-child { margin-top: 0; }
+  .linea {
+    display: flex; justify-content: space-between; padding: 9px 0;
+    border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  .linea:last-of-type { border-bottom: none; }
+  .linea .etiqueta { color: var(--ink-soft); }
+  .linea .monto { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; }
+  .total {
+    display: flex; justify-content: space-between; margin-top: 8px; padding-top: 14px;
+    border-top: 2px solid var(--accent); font-size: 20px;
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 700; color: var(--accent);
+  }
+  .nota-pequena { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+  .warn-variable {
+    display: none; background: var(--paper-2); border: 1px solid var(--accent);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-top: 14px; color: var(--ink);
+  }
+  .vigencia { font-size: 12px; color: var(--ink-soft); text-align: right; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Finiquito y Liquidación</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Calculadora de Finiquito y Liquidación</h1>
+    <p class="sub">Estimación de referencia según la Ley Federal del Trabajo. No se guarda ningún dato.</p>
+
+    <div class="disclaimer">
+      <strong>Leé esto antes de confiar en el resultado:</strong>
+      <ul>
+        <li>Este cálculo <strong>asume un salario fijo</strong>, sin comisiones, bonos variables ni horas extra. Si tu ingreso real varía, el <em>salario diario integrado</em> real que la ley usa es distinto — y tu resultado real puede cambiar bastante.</li>
+        <li><strong>No incluye</strong>: salarios ya devengados y no pagados, reparto de utilidades (PTU), ni prestaciones superiores a la ley que tu contrato pueda dar.</li>
+        <li>La diferencia entre "renuncia", "despido justificado" y "despido injustificado" cambia por completo el resultado — si no estás seguro de cuál aplica a tu caso, este cálculo puede estar muy alejado de la realidad.</li>
+        <li>Esto <strong>no es asesoría legal</strong>. Para un cálculo real, especialmente si vas a firmar un finiquito, la <strong>PROFEDET</strong> (Procuraduría Federal de la Defensa del Trabajo) da asesoría y representación <strong>gratuita</strong> a trabajadores en México.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="vigencia">Salario mínimo de referencia: 2026</div>
+      <label>Motivo de la salida</label>
+      <select id="motivo">
+        <option value="renuncia">Renuncia voluntaria</option>
+        <option value="despido_injustificado">Despido injustificado</option>
+        <option value="despido_justificado">Despido justificado (Art. 47 LFT)</option>
+        <option value="termino_contrato">Término de contrato (obra o tiempo determinado)</option>
+      </select>
+
+      <label>Salario diario ordinario</label>
+      <input id="salarioDiario" type="number" placeholder="ej. 400" inputmode="decimal">
+
+      <div class="row">
+        <div>
+          <label>Fecha de ingreso</label>
+          <input id="fechaIngreso" type="date">
+        </div>
+        <div>
+          <label>Fecha de salida</label>
+          <input id="fechaSalida" type="date">
+        </div>
+      </div>
+
+      <label>Zona salarial (para el tope de prima de antigüedad)</label>
+      <select id="zona">
+        <option value="315.04">Zona general ($315.04/día, 2026)</option>
+        <option value="440.87">Zona Libre de la Frontera Norte ($440.87/día, 2026)</option>
+      </select>
+
+      <div class="checkrow">
+        <input type="checkbox" id="tieneVariables">
+        <label style="margin:0;color:inherit" for="tieneVariables">Mi salario incluye comisiones, bonos variables u horas extra frecuentes</label>
+      </div>
+      <div class="warn-variable" id="warnVariable">
+        Con ingreso variable, la ley usa un <strong>salario diario integrado</strong> promediado de los últimos meses — no el salario base. Este resultado va a estar por debajo de lo que realmente te corresponde. Considerá usar tu SDI real (lo puede indicar tu patrón o tu recibo de nómina) en el campo de salario diario para una estimación más cercana.
+      </div>
+
+      <button class="primary" onclick="calcular()">Calcular</button>
+    </div>
+
+    <div class="card resultado" id="resultado">
+      <div class="seccion-titulo">Partes proporcionales</div>
+      <div class="linea"><span class="etiqueta">Antigüedad</span><span class="monto" id="antiguedadTxt">—</span></div>
+      <div class="linea"><span class="etiqueta">Aguinaldo proporcional</span><span class="monto" id="aguinaldoMonto">—</span></div>
+      <div class="linea"><span class="etiqueta">Vacaciones proporcionales</span><span class="monto" id="vacacionesMonto">—</span></div>
+      <div class="linea"><span class="etiqueta">Prima vacacional (25%)</span><span class="monto" id="primaVacMonto">—</span></div>
+
+      <div id="seccionAntiguedad" style="display:none">
+        <div class="seccion-titulo">Prima de antigüedad</div>
+        <div class="linea"><span class="etiqueta">12 días por año (tope: 2x salario mínimo)</span><span class="monto" id="primaAntiguedadMonto">—</span></div>
+      </div>
+
+      <div id="seccionIndemnizacion" style="display:none">
+        <div class="seccion-titulo">Indemnización (despido injustificado)</div>
+        <div class="linea"><span class="etiqueta">3 meses de salario</span><span class="monto" id="tresMesesMonto">—</span></div>
+        <div class="linea"><span class="etiqueta">20 días por año de servicio</span><span class="monto" id="veinteDiasMonto">—</span></div>
+      </div>
+
+      <div class="total"><span>Total estimado</span><span id="totalMonto">—</span></div>
+    </div>
+
+    <p class="nota-pequena" id="notaFinal" style="display:none">Esto es una <strong>estimación de referencia</strong>, calculada con las fórmulas generales de la LFT. Verificá siempre con un especialista o con la PROFEDET antes de firmar cualquier finiquito.</p>
+  </div>
+</main>
+<script>
+document.getElementById('tieneVariables').addEventListener('change', (e) => {
+  document.getElementById('warnVariable').style.display = e.target.checked ? 'block' : 'none';
+});
+
+function diasVacaciones(anios) {
+  if (anios < 1) return 0;
+  if (anios <= 4) return 10 + anios * 2;
+  if (anios === 5) return 20;
+  const bloques = Math.floor((anios - 6) / 5);
+  return 22 + bloques * 2;
+}
+
+function fmtMoneda(n) {
+  return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function aplicaPrimaAntiguedad(motivo, aniosCompletos) {
+  if (motivo === 'renuncia') return aniosCompletos >= 15;
+  return true;
+}
+
+function calcular() {
+  const salarioDiario = parseFloat(document.getElementById('salarioDiario').value);
+  const fechaIngresoStr = document.getElementById('fechaIngreso').value;
+  const fechaSalidaStr = document.getElementById('fechaSalida').value || new Date().toISOString().slice(0, 10);
+  const motivo = document.getElementById('motivo').value;
+  const salarioMinimo = parseFloat(document.getElementById('zona').value);
+
+  if (!salarioDiario || salarioDiario <= 0 || !fechaIngresoStr) {
+    alert('Completá el salario diario y la fecha de ingreso.');
+    return;
+  }
+
+  const fechaIngreso = new Date(fechaIngresoStr + 'T00:00:00');
+  const fechaSalida = new Date(fechaSalidaStr + 'T00:00:00');
+
+  if (fechaSalida < fechaIngreso) {
+    alert('La fecha de salida no puede ser anterior a la fecha de ingreso.');
+    return;
+  }
+
+  const msPorDia = 1000 * 60 * 60 * 24;
+  const diasTotales = Math.floor((fechaSalida - fechaIngreso) / msPorDia);
+  const aniosCompletos = Math.floor(diasTotales / 365);
+  const diasRestantes = diasTotales - aniosCompletos * 365;
+
+  // Aguinaldo proporcional (año calendario de salida)
+  const inicioAnioCalendario = new Date(fechaSalida.getFullYear(), 0, 1);
+  const inicioConteo = fechaIngreso > inicioAnioCalendario ? fechaIngreso : inicioAnioCalendario;
+  const diasTrabajadosEsteAnio = Math.floor((fechaSalida - inicioConteo) / msPorDia) + 1;
+  const aguinaldoMonto = (15 * diasTrabajadosEsteAnio / 365) * salarioDiario;
+
+  // Vacaciones y prima vacacional proporcionales (año laboral en curso)
+  const diasVac = diasVacaciones(aniosCompletos + 1);
+  const vacacionesMonto = diasVac * (diasRestantes / 365) * salarioDiario;
+  const primaVacMonto = vacacionesMonto * 0.25;
+
+  // Prima de antigüedad
+  const aplicaPrima = aplicaPrimaAntiguedad(motivo, aniosCompletos);
+  const salarioTopado = Math.min(salarioDiario, salarioMinimo * 2);
+  const primaAntiguedadMonto = aplicaPrima ? salarioTopado * 12 * aniosCompletos : 0;
+
+  // Indemnización (solo despido injustificado)
+  const esInjustificado = motivo === 'despido_injustificado';
+  const tresMesesMonto = esInjustificado ? salarioDiario * 90 : 0;
+  const veinteDiasMonto = esInjustificado ? salarioDiario * 20 * aniosCompletos : 0;
+
+  const total = aguinaldoMonto + vacacionesMonto + primaVacMonto + primaAntiguedadMonto + tresMesesMonto + veinteDiasMonto;
+
+  document.getElementById('antiguedadTxt').textContent = `${aniosCompletos} año${aniosCompletos === 1 ? '' : 's'}, ${diasRestantes} días`;
+  document.getElementById('aguinaldoMonto').textContent = fmtMoneda(aguinaldoMonto);
+  document.getElementById('vacacionesMonto').textContent = fmtMoneda(vacacionesMonto);
+  document.getElementById('primaVacMonto').textContent = fmtMoneda(primaVacMonto);
+
+  document.getElementById('seccionAntiguedad').style.display = aplicaPrima ? 'block' : 'none';
+  document.getElementById('primaAntiguedadMonto').textContent = fmtMoneda(primaAntiguedadMonto);
+
+  document.getElementById('seccionIndemnizacion').style.display = esInjustificado ? 'block' : 'none';
+  document.getElementById('tresMesesMonto').textContent = fmtMoneda(tresMesesMonto);
+  document.getElementById('veinteDiasMonto').textContent = fmtMoneda(veinteDiasMonto);
+
+  document.getElementById('totalMonto').textContent = fmtMoneda(total);
+
+  document.getElementById('resultado').style.display = 'block';
+  document.getElementById('notaFinal').style.display = 'block';
+  document.getElementById('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('fechaSalida').valueAsDate = new Date();
+</script>
+</body>
+</html>

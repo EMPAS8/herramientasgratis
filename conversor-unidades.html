@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Conversor de Unidades</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDEAE0; --paper-2: #E2DDCC; --card: #FBFAF5;
+    --line: #C9C0AC; --ink: #221F1B; --ink-soft: #6B6455;
+    --accent: #AE3B2C; --accent-ink: #FBFAF5;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+      --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+      --accent: #E0664F; --accent-ink: #1A1712;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1A1712; --paper-2: #23201A; --card: #26221B;
+    --line: #443E30; --ink: #EFE9DA; --ink-soft: #B0A68F;
+    --accent: #E0664F; --accent-ink: #1A1712;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%; margin: 0; background: var(--paper);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink); display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+    border-bottom: 1px solid var(--line); background: var(--paper);
+    flex-shrink: 0; position: sticky; top: 0; z-index: 20;
+  }
+  #homeBtn {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    width: 36px; height: 36px; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; text-decoration: none;
+  }
+  #homeBtn:hover { border-color: var(--accent); }
+  .brand { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px; }
+  main { flex: 1; padding: 24px 18px 60px; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  .sub { color: var(--ink-soft); font-size: 14.5px; margin: 0 0 24px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tab {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 7px 16px; font-size: 14px; color: var(--ink); cursor: pointer;
+  }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 160px; }
+  label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 5px; }
+  input, select {
+    width: 100%; padding: 10px 12px; font-family: inherit; font-size: 17px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; color: var(--ink);
+  }
+  .swap {
+    background: var(--card); border: 1px solid var(--line); border-radius: 50%;
+    width: 40px; height: 40px; font-size: 16px; cursor: pointer; color: var(--ink);
+    flex-shrink: 0; margin-bottom: 2px;
+  }
+  .swap:hover { border-color: var(--accent); color: var(--accent); }
+  #resultado {
+    margin-top: 20px; font-family: "Source Serif 4", Georgia, serif;
+    font-size: 26px; text-align: center; color: var(--accent); font-weight: 600;
+  }
+  .note { font-size: 12.5px; color: var(--ink-soft); margin-top: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <a id="homeBtn" href="index.html" aria-label="Volver a Herramientas Gratis" title="Volver a Herramientas Gratis">🏠</a>
+  <div class="brand">Conversor de Unidades</div>
+</header>
+<main>
+  <div class="wrap">
+    <h1>Conversor de Unidades</h1>
+    <p class="sub">Convertí entre unidades al instante. Nada se guarda: el cálculo ocurre en tu navegador.</p>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>Valor</label>
+          <input id="valor" type="number" value="1" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label>De</label>
+          <select id="de"></select>
+        </div>
+        <button class="swap" id="swapBtn" title="Invertir" aria-label="Invertir unidades">⇄</button>
+        <div class="field">
+          <label>A</label>
+          <select id="a"></select>
+        </div>
+      </div>
+      <div id="resultado">—</div>
+    </div>
+    <p class="note" id="nota">Los valores son aproximados y suficientes para uso cotidiano.</p>
+  </div>
+</main>
+<script>
+// Cada categoría define unidades con su factor de conversión respecto a una unidad base,
+// salvo temperatura que usa funciones propias.
+const categorias = {
+  longitud: {
+    nombre: 'Longitud', base: 'm',
+    unidades: {
+      mm: { nombre: 'Milímetros', factor: 0.001 },
+      cm: { nombre: 'Centímetros', factor: 0.01 },
+      m:  { nombre: 'Metros', factor: 1 },
+      km: { nombre: 'Kilómetros', factor: 1000 },
+      pulgada: { nombre: 'Pulgadas', factor: 0.0254 },
+      pie: { nombre: 'Pies', factor: 0.3048 },
+      yarda: { nombre: 'Yardas', factor: 0.9144 },
+      milla: { nombre: 'Millas', factor: 1609.344 }
+    }
+  },
+  peso: {
+    nombre: 'Peso', base: 'kg',
+    unidades: {
+      mg: { nombre: 'Miligramos', factor: 0.000001 },
+      g:  { nombre: 'Gramos', factor: 0.001 },
+      kg: { nombre: 'Kilogramos', factor: 1 },
+      ton: { nombre: 'Toneladas', factor: 1000 },
+      libra: { nombre: 'Libras', factor: 0.453592 },
+      onza: { nombre: 'Onzas', factor: 0.0283495 }
+    }
+  },
+  volumen: {
+    nombre: 'Volumen', base: 'l',
+    unidades: {
+      ml: { nombre: 'Mililitros', factor: 0.001 },
+      l:  { nombre: 'Litros', factor: 1 },
+      m3: { nombre: 'Metros cúbicos', factor: 1000 },
+      cucharadita: { nombre: 'Cucharaditas', factor: 0.00492892 },
+      cucharada: { nombre: 'Cucharadas', factor: 0.0147868 },
+      taza: { nombre: 'Tazas', factor: 0.236588 },
+      galon: { nombre: 'Galones (US)', factor: 3.78541 }
+    }
+  },
+  temperatura: {
+    nombre: 'Temperatura', base: 'c',
+    unidades: {
+      c: { nombre: 'Celsius' },
+      f: { nombre: 'Fahrenheit' },
+      k: { nombre: 'Kelvin' }
+    }
+  },
+  velocidad: {
+    nombre: 'Velocidad', base: 'kmh',
+    unidades: {
+      kmh: { nombre: 'Km/h', factor: 1 },
+      mph: { nombre: 'Millas/h', factor: 1.60934 },
+      ms:  { nombre: 'Metros/segundo', factor: 3.6 },
+      nudo: { nombre: 'Nudos', factor: 1.852 }
+    }
+  },
+  moneda: {
+    nombre: 'Moneda', base: 'USD', remota: true, cargando: false, cargada: false,
+    unidades: {}
+  }
+};
+
+const nombresMoneda = {
+  USD: 'Dólar estadounidense', MXN: 'Peso mexicano', EUR: 'Euro', GBP: 'Libra esterlina',
+  JPY: 'Yen japonés', CAD: 'Dólar canadiense', CHF: 'Franco suizo', CNY: 'Yuan chino',
+  BRL: 'Real brasileño', AUD: 'Dólar australiano', INR: 'Rupia india', KRW: 'Won surcoreano',
+  SEK: 'Corona sueca', NOK: 'Corona noruega', NZD: 'Dólar neozelandés', SGD: 'Dólar de Singapur',
+  HKD: 'Dólar de Hong Kong', ZAR: 'Rand sudafricano', TRY: 'Lira turca', PLN: 'Zloty polaco',
+  ILS: 'Nuevo shekel israelí', CZK: 'Corona checa', DKK: 'Corona danesa', HUF: 'Florín húngaro',
+  THB: 'Baht tailandés', IDR: 'Rupia indonesia', MYR: 'Ringgit malayo', PHP: 'Peso filipino'
+};
+
+let catActual = 'longitud';
+
+const tabsEl = document.getElementById('tabs');
+const deEl = document.getElementById('de');
+const aEl = document.getElementById('a');
+const valorEl = document.getElementById('valor');
+const resultadoEl = document.getElementById('resultado');
+
+function renderTabs() {
+  tabsEl.innerHTML = Object.keys(categorias).map(k =>
+    `<button class="tab${k === catActual ? ' active' : ''}" data-cat="${k}">${categorias[k].nombre}</button>`
+  ).join('');
+  tabsEl.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      catActual = btn.dataset.cat;
+      renderTabs();
+      actualizarNota();
+      if (catActual === 'moneda' && !categorias.moneda.cargada) {
+        cargarMonedas();
+      } else {
+        renderUnidades();
+        calcular();
+      }
+    });
+  });
+}
+
+function actualizarNota() {
+  const nota = document.getElementById('nota');
+  nota.textContent = catActual === 'moneda'
+    ? 'Tasas de cambio en tiempo real (cortesía del Banco Central Europeo, vía frankfurter.app). Requiere conexión a internet; no se guarda ningún dato.'
+    : 'Los valores son aproximados y suficientes para uso cotidiano.';
+}
+
+function renderUnidades() {
+  const cat = categorias[catActual];
+  const opciones = Object.keys(cat.unidades).map(k => `<option value="${k}">${cat.unidades[k].nombre}</option>`).join('');
+  deEl.innerHTML = opciones;
+  aEl.innerHTML = opciones;
+  const keys = Object.keys(cat.unidades);
+  deEl.value = keys.includes('USD') ? 'USD' : keys[0];
+  aEl.value = keys.includes('MXN') ? 'MXN' : (keys[1] || keys[0]);
+}
+
+async function cargarMonedas() {
+  const cat = categorias.moneda;
+  cat.cargando = true;
+  resultadoEl.textContent = 'Cargando tasas de cambio…';
+  deEl.innerHTML = '';
+  aEl.innerHTML = '';
+  try {
+    const resp = await fetch('https://api.frankfurter.app/latest?from=USD');
+    if (!resp.ok) throw new Error('respuesta no válida');
+    const data = await resp.json();
+    const unidades = { USD: { nombre: nombresMoneda.USD, factor: 1 } };
+    for (const codigo in data.rates) {
+      if (nombresMoneda[codigo]) {
+        unidades[codigo] = { nombre: nombresMoneda[codigo], factor: 1 / data.rates[codigo] };
+      }
+    }
+    cat.unidades = unidades;
+    cat.cargada = true;
+    cat.cargando = false;
+    renderUnidades();
+    calcular();
+  } catch (err) {
+    cat.cargando = false;
+    resultadoEl.textContent = 'No se pudieron obtener las tasas de cambio. Revisá tu conexión e intentá de nuevo.';
+  }
+}
+
+function convertirTemperatura(valor, de, a) {
+  let celsius;
+  if (de === 'c') celsius = valor;
+  else if (de === 'f') celsius = (valor - 32) * 5 / 9;
+  else celsius = valor - 273.15;
+
+  if (a === 'c') return celsius;
+  if (a === 'f') return celsius * 9 / 5 + 32;
+  return celsius + 273.15;
+}
+
+function calcular() {
+  const valor = parseFloat(valorEl.value);
+  if (isNaN(valor)) { resultadoEl.textContent = '—'; return; }
+  const cat = categorias[catActual];
+  const de = deEl.value;
+  const a = aEl.value;
+  let resultado;
+  if (catActual === 'temperatura') {
+    resultado = convertirTemperatura(valor, de, a);
+  } else {
+    const enBase = valor * cat.unidades[de].factor;
+    resultado = enBase / cat.unidades[a].factor;
+  }
+  const redondeado = Math.abs(resultado) >= 100 ? resultado.toFixed(1) : resultado.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  resultadoEl.textContent = `${valor} ${cat.unidades[de].nombre.toLowerCase()} = ${redondeado} ${cat.unidades[a].nombre.toLowerCase()}`;
+}
+
+document.getElementById('swapBtn').addEventListener('click', () => {
+  const tmp = deEl.value;
+  deEl.value = aEl.value;
+  aEl.value = tmp;
+  calcular();
+});
+
+valorEl.addEventListener('input', calcular);
+deEl.addEventListener('change', calcular);
+aEl.addEventListener('change', calcular);
+
+renderTabs();
+renderUnidades();
+calcular();
+</script>
+</body>
+</html>
